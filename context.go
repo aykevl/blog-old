@@ -16,7 +16,6 @@ import (
 type Context struct {
 	*Config
 	root          string
-	templates     map[string]*template.Template
 	templateInfos map[string]TemplateInfo
 	db            *sql.DB
 	router        *Router
@@ -29,7 +28,6 @@ type TemplateInfo struct {
 
 func NewContext(root string) *Context {
 	var c Context
-	c.templates = make(map[string]*template.Template)
 	c.Config = loadConfig(root)
 
 	// Read information about templates.
