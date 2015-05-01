@@ -30,24 +30,6 @@ func NewContext(root string) *Context {
 	var c Context
 	c.Config = loadConfig(root)
 
-	// Read information about templates.
-
-	f, err := os.Open(c.TemplateDirectory + "/templates.json")
-	if err != nil {
-		internalError("failed to open theme configuration file:", err)
-	}
-
-	buf, err := ioutil.ReadAll(f)
-	if err != nil {
-		internalError("failed to read theme configuration file", err)
-	}
-
-	c.templateInfos = make(map[string]TemplateInfo)
-	err = json.Unmarshal(buf, &c.templateInfos)
-	if err != nil {
-		internalError("failed to parse theme configuration file", err)
-	}
-
 	// Set up database connection.
 	db, err := sql.Open(c.DatabaseType, c.DatabaseConnection)
 	if err != nil {
@@ -95,7 +77,32 @@ func (c *Context) GetTemplateModified(name string) time.Time {
 	return t
 }
 
+// loadTemplateInfos reads info about templates if it hasn't been loaded
+func (c *Context) loadTemplateInfos() {
+	if (c.templateInfos != nil) {
+		return
+	}
+
+	f, err := os.Open(c.TemplateDirectory + "/templates.json")
+	if err != nil {
+		internalError("failed to open theme configuration file:", err)
+	}
+
+	buf, err := ioutil.ReadAll(f)
+	if err != nil {
+		internalError("failed to read theme configuration file", err)
+	}
+
+	c.templateInfos = make(map[string]TemplateInfo)
+	err = json.Unmarshal(buf, &c.templateInfos)
+	if err != nil {
+		internalError("failed to parse theme configuration file", err)
+	}
+}
+
 func (c *Context) getTemplatePaths(name string) (string, []string) {
+	c.loadTemplateInfos()
+
 	info, ok := c.templateInfos[name]
 	if !ok {
 		raiseError("could not find template " + name)
