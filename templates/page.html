@@ -1,0 +1,13 @@
+{{define "head"}}
+{{if .page.Summary}}
+		<meta name="description" content="{{.page.Summary}}"/>
+	{{end}}
+{{end}}
+
+{{define "body"}}
+<article class="page">
+	<h1><a href="{{$.base}}{{.page.Url}}">{{.page.Title}}</a></h1>
+{{markdown .page.Text}}
+	<div class="modified">Updated: <time datetime="{{timestamp .page.Modified}}">{{date .page.Modified}}</time></div>
+</article>
+{{end}}

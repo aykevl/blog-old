@@ -1,0 +1,15 @@
+{{define "body"}}
+{{with .page}}
+{{if istime .Published}}
+<p class="warning"><strong>Note:</strong> this is a preview, not the <a href="{{$.base}}{{.Url}}">actual published page</a>!</time>
+{{else}}
+<p class="warning"><strong>Note:</strong> this is a preview, this page hasn't been published yet!</time>
+{{end}}
+<article class="post">
+	<h1><a href="{{$.base}}{{.Url}}">{{.Title}}</a></h1>
+{{markdown .Text}}
+</article>
+{{else}}
+<p class="error">Could not find this article.</p>
+{{end}}
+{{end}}

@@ -1,0 +1,31 @@
+{{define "body"}}
+<h1>Login</h1>
+
+<form method="POST" action="">
+
+{{if .loginerror}}
+<p class="error">
+{{if eq .loginerror "user"}}Email address or password did not match.
+{{else if eq .loginerror "token"}}Session token error.
+{{else if eq .loginerror "expired"}}The session has expired.
+{{else}}Unknown error.{{end}}
+</p>
+{{end}}
+
+	<table>
+		<tr>
+			<th><label for="email">email:</label></th>
+			<td><input type="email" id="email" name="email" required autofocus/></td>
+		</tr>
+		<tr>
+			<th><label for="password">password:</label></th>
+			<td><input type="password" id="password" name="password"required/></td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<input type="submit" name="login" value="Login"/>
+			</td>
+		</tr>
+	</table>
+</form>
+{{end}}

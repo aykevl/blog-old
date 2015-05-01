@@ -1,0 +1,65 @@
+{{define "title"}} – Administrator interface{{end}}
+{{define "head"}}
+<style>
+@media screen and (min-width: 800px) {
+	.columns {
+		display: flex;
+	}
+	.column {
+		flex: 1 1 auto;
+	}
+	.column:not(:first-child) {
+		margin-left: 8px;
+	}
+	.column:not(:last-child) {
+		margin-right: 8px;
+	}
+}
+</style>
+{{end}}
+
+{{define "body"}}
+<h1>Pages</h1>
+<div class="columns">
+	<div class="column">
+		<h2>Drafts</h2>
+		<ul>
+			<li><a href="{{$.admin}}/edit/newpage"><em>Create a new page</em></a></li>
+{{range .menuUnpublished}}
+			<li><a href="{{$.admin}}/edit/{{.Id}}">{{.Title}}</a> ({{.Url}})</li>
+{{end}}
+		</ul>
+	</div>
+	<div class="column">
+		<h2>Published</h2>
+		<ul>
+{{range .menu}}
+			<li><a href="{{$.admin}}/edit/{{.Id}}">{{.Title}}</a> ({{.Url}})</li>
+{{end}}
+		</ul>
+	</div>
+</div>
+
+<h1>Blog posts</h1>
+
+<div class="columns">
+	<div class="column">
+		<h2>Drafts</h2>
+		<ul>
+			<li><a href="{{$.admin}}/edit/newpost"><em>Create new blog post</em></a></li>
+{{range .drafts}}
+			<li><a href="{{$.admin}}/edit/{{.Id}}">{{.Title}}</a></li>
+{{end}}
+		</ul>
+	</div>
+
+	<div class="column">
+		<h2>Published</h2>
+		<ul>
+{{range .published}}
+			<li><a href="{{$.admin}}/edit/{{.Id}}">{{.Title}}</a></li>
+{{end}}
+		</ul>
+	</div>
+</div>
+{{end}}

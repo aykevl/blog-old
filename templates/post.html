@@ -1,0 +1,18 @@
+{{define "head"}}
+{{if .page.Summary}}
+		<meta name="description" content="{{.page.Summary}}"/>
+	{{end}}
+{{end}}
+
+{{define "body"}}
+{{with .page}}
+<article class="post">
+	<h1><a href="{{$.base}}{{.Url}}">{{.Title}}</a></h1>
+	<time datetime="{{timestamp .Published}}" class="published">{{date .Published}}</time>
+{{markdown .Text}}
+	<div class="modified">Updated: <time datetime="{{timestamp .Modified}}">{{date .Modified}}</time></div>
+</article>
+{{else}}
+<p class="error">Could not find this article.</p>
+{{end}}
+{{end}}

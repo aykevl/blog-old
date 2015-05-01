@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<title>{{.siteTitle}}{{if .title}} – {{.title}}{{else}}{{template "title" .}}{{end}}</title>
+		<link rel="stylesheet" href="{{.assets}}/common.css"/>
+		<link rel="icon" href="{{.assets}}/logo.png"/>
+		<script src="{{.assets}}/common.js" async></script>
+{{template "head" .}}
+	</head>
+	<body>
+
+		<header>
+			<a href="{{$.base}}/" id="title">
+				<img src="{{.assets}}/logo.png" class="avatar" width="43" height="43"/>
+				<span class="text">{{.siteTitle}}</span>
+			</a>
+			<div id="menu">
+{{range .menu}}
+				<a href="{{$.base}}{{.Url}}">{{.Title}}</a>
+{{end}}
+{{if .user}}
+				<a href="{{$.base}}/admin/">Admin</a>
+{{end}}
+			</div>
+		</header>
+
+		<main>
+{{template "body" .}}
+		</main>
+
+		<footer>
+			<nav>
+				<a href="{{$.base}}/archive/">Archive</a>
+			</nav>
+		</footer>
+	</body>
+</html>
+{{define "head"}}{{end}}
+{{define "title"}}{{end}}

@@ -1,0 +1,13 @@
+{{define "body"}}
+<h1>CSRF protection failed</h1>
+
+<p>Sorry, but we couldn't process that form you sent. For security reasons, certain requests are blocked.</p>
+
+<p>CSRF protection can be enabled in one of the following ways:</p>
+
+<ul>
+	<li>Via JavaScript (JavaScript needs to be enabled).</li>
+	<li>Via the <code><a href="https://wiki.mozilla.org/Security/Origin">Origin</a></code> HTTP header. This header is as of now (September 2014) only being sent by Chrome.</li>
+</ul>
+
+{{end}}

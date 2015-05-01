@@ -1,0 +1,11 @@
+{{define "title"}} – Archive{{end}}
+{{define "body"}}
+<h1>Archive</h1>
+
+<ul>
+{{range .posts}}
+	<li><a href="{{$.base}}{{.Url}}">{{.Title}}</a></li>
+{{end}}
+</ul>
+
+{{end}}

@@ -1,0 +1,40 @@
+{{define "title"}} – New {{.page.Typename}}{{end}}
+{{define "head"}}
+<style>
+main,
+form {
+	display: flex;
+	flex-direction: column;
+	flex: 1 0 auto;
+}
+form > * {
+	flex: 0 0 auto;
+}
+form > textarea {
+	min-height: 10em;
+	flex: 1 0 auto;
+}
+</style>
+{{end}}
+
+{{define "body"}}
+<form method="POST" action="">
+	<h1><input type="text" name="title" class="wide" placeholder="{{capitalize .page.Typename}} title..." required value="{{.page.Title}}"{{if not .page.Title}} autofocus{{end}}/></h1>
+	<div>
+		<input type="text" name="name" class="classic" placeholder="name..." required value="{{.page.Name}}" pattern="[a-z][a-z0-9]*(-[a-z0-9]+)*"/>
+		<input type="submit" name="save" value="Save" title="Save this page as draft or published page"/>
+{{if istime .page.Published}}
+		<input type="submit" name="unpublish" value="Unpublish" title="Save and undo publishing this page" onclick="return confirm('Are you sure you want to undo publishing this page? This will remove the published time, and not simply hide the page.')"/>
+		<a href="{{$.base}}{{.page.Url}}"><strong>published page</strong></a>
+{{else}}
+		<input type="submit" name="publish" value="Publish" title="Save and publish this page" onclick="return confirm('Do you want to publish?')"/>
+	{{if .page.Id}}
+		<a href="{{$.admin}}/edit/{{.page.Id}}/preview" target="_blank">Preview →</a>
+	{{end}}
+{{end}}
+	</div>
+
+	<input type="text" name="summary" placeholder="Summary..." value="{{.page.Summary}}"/>
+	<textarea name="text" placeholder="Go ahead and write what's on your mind!"{{if .page.Title}} autofocus{{end}}>{{.page.Text}}</textarea>
+</form>
+{{end}}

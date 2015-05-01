@@ -1,0 +1,9 @@
+{{define "body"}}
+{{range .posts}}
+<article class="post">
+	<h1><a href="{{$.base}}{{.Url}}">{{.Title}}</a></h1>
+	<time datetime="{{timestamp .Published}}" class="published">{{date .Published}}</time>
+	<p>{{markdown .Summary}}</p>
+</article>
+{{end}}
+{{end}}
