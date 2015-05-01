@@ -246,7 +246,7 @@ func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error
 			return nil, ErrInvalidUser
 		}
 
-		token, err := ctx.sessionStore.NewToken(email)
+		token, err := ctx.SessionStore().NewToken(email)
 		checkError(err, "could not create token")
 
 		cookie := token.Cookie()
@@ -265,7 +265,7 @@ func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error
 			return nil, ErrInvalidToken
 		}
 
-		token, err := ctx.sessionStore.Verify(tokenCookie)
+		token, err := ctx.SessionStore().Verify(tokenCookie)
 		if err != nil {
 			if err == south.ErrExpiredToken {
 				return nil, ErrExpiredToken
