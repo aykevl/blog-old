@@ -123,5 +123,8 @@ func (c *Context) getTemplatePaths(name string) (string, []string) {
 }
 
 func (c *Context) Close() {
-	c.db.Close()
+	err := c.db.Close()
+	if err != nil {
+		internalError("could not close database", err)
+	}
 }
