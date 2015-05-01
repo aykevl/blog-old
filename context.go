@@ -10,7 +10,7 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/aykevl93/south"
+	"github.com/aykevl/south"
 )
 
 type Context struct {

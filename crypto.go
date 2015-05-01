@@ -2,7 +2,7 @@ package main
 
 import (
 	"code.google.com/p/go.crypto/bcrypt"
-	"github.com/aykevl93/south"
+	"github.com/aykevl/south"
 )
 
 func storePassword(password string) string {

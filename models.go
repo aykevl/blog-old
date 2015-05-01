@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aykevl93/south"
+	"github.com/aykevl/south"
 )
 
 type Hint int

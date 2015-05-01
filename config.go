@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/aykevl93/south"
+	"github.com/aykevl/south"
 )
 
 const CONFIG_PATH = "/etc/blog.json"
