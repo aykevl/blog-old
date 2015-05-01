@@ -30,7 +30,7 @@ type TemplateInfo struct {
 func NewContext(root string) *Context {
 	var c Context
 	c.templates = make(map[string]*template.Template)
-	c.Config = readConfig(root)
+	c.Config = loadConfig(root)
 
 	// Read information about templates.
 

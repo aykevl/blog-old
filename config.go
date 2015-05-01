@@ -34,23 +34,39 @@ type ConfigData struct {
 	SessionKey         string `json:"sessionkey"`
 }
 
-func readConfig(root string) *Config {
+func loadConfig(root string) *Config {
 	var c Config
+	c.load(root)
 
+	c.SessionKey = decodeKey(c.ConfigData.SessionKey)
+
+	// Defaults
+
+	if c.SiteTitle == "" {
+		c.SiteTitle = "Blog"
+	}
+	if c.DatabaseType == "" {
+		c.DatabaseType = "sqlite3"
+	}
+
+	return &c
+}
+
+func (c *Config) load(root string) {
 	c.configPath = root + CONFIG_PATH
 
 	f, err := os.Open(c.configPath)
-	checkError(err, "failed to open configuration file")
+	if os.IsNotExist(err) {
+		return
+	} else {
+		checkError(err, "failed to open configuration file")
+	}
 
 	buf, err := ioutil.ReadAll(f)
 	checkError(err, "failed to read configuration file")
 
 	err = json.Unmarshal(buf, &c.ConfigData)
 	checkError(err, "failed to parse configuration file")
-
-	c.SessionKey = decodeKey(c.ConfigData.SessionKey)
-
-	return &c
 }
 
 func (c *Config) Update() {
