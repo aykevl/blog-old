@@ -52,9 +52,9 @@ func NewContext(root string) *Context {
 
 // SessionStore returns the session store (lazy load)
 func (c *Context) SessionStore() *south.Store {
-	if (c.sessionStore == nil) {
+	if c.sessionStore == nil {
 		// TODO define admin URL in one place
-		sessionStore, err := south.New(c.SessionKey, c.SiteRoot + "/admin/")
+		sessionStore, err := south.New(c.SessionKey, c.SiteRoot+"/admin/")
 		checkError(err, "could not create session store")
 		c.sessionStore = sessionStore
 	}
