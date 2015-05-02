@@ -22,10 +22,12 @@ type Config struct {
 
 type ConfigData struct {
 	// configuration variables
-	TemplateDirectory  string `json:"theme"`
+	Skin               string `json:"skin"`
 	SiteTitle          string `json:"title"`
 	PostsDirectory     string `json:"posts"`
-	SiteRoot           string `json:"siteroot"`
+	WebRoot            string `json:"webroot"`
+	BlogRoot           string `json:"blogroot"`
+	SiteRoot           string `json:"siterooturl"`
 	Origin             string `json:"origin"`
 	Insecure           bool   `json:"insecure"`
 	Assets             string `json:"assets"`

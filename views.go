@@ -3,7 +3,11 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"io"
 	"net/http"
+	"os"
+	"os/exec"
+	"path"
 	"strconv"
 	"time"
 )
@@ -73,17 +77,7 @@ func (v *ViewBase) Output(req *http.Request, w http.ResponseWriter, lastModified
 
 	// Test whether we can serve a 304 Not Modified reply.
 	if !lastModified.IsZero() && v.errorCode == 0 {
-		ims, err := time.Parse(time.RFC1123, req.Header.Get("If-Modified-Since"))
-		if err == nil && lastModified.Equal(ims) {
-			// There is no IMS header present, or the parser failed.
-			//
-			// According to rfc7231, an implementation MUST also parse certain
-			// legacy date formats.
-			// Because I don't think current HTTP clients still use them and a
-			// full reply is valid anyway, I'll only parse the recommended date
-			// format.
-			// See https://tools.ietf.org/html/rfc7231#section-7.1.1.1
-
+		if equalLastModified(lastModified, req) {
 			w.WriteHeader(304) // Not Modified
 			return
 		}
@@ -115,6 +109,142 @@ func (v *ViewBase) Output(req *http.Request, w http.ResponseWriter, lastModified
 
 	if req.Method != "HEAD" {
 		w.Write(buf.Bytes())
+	}
+}
+
+func OutputStatic(req *http.Request, w http.ResponseWriter, contentType string, p string) {
+	f, err := os.Open(p)
+	checkError(err, "OutputStatic: could not open")
+	st, err := f.Stat()
+	checkError(err, "OutputStatic: could not stat file")
+
+	h := w.Header()
+	h.Set("Cache-Control", "max-age=3600,s-maxage=5")
+
+	if equalLastModified(st.ModTime(), req) {
+		w.WriteHeader(304) // Not Modified
+		return
+	}
+
+	h.Set("Content-Type", contentType+"; charset=utf-8")
+	h.Set("Content-Encoding", "gzip")
+	h.Set("Content-Length", strconv.FormatInt(st.Size(), 10))
+	h.Set("Last-Modified", st.ModTime().UTC().Format(time.RFC1123))
+
+	if req.Method != "HEAD" {
+		n, err := io.Copy(w, f)
+		if err != nil {
+			internalError("could not copy file to output", err)
+		}
+		if n != st.Size() {
+			//raiseError("OutputStatic: size doesn't match with stat output " + strconv.Itoa(int(n)))
+		}
+	}
+}
+
+func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values Values) {
+	name := values["name"]
+	if name == "" {
+		NotFound(ctx, w, r) // or permission denied?
+		return
+	}
+
+	ext := path.Ext(name)
+
+	for _, skin := range ctx.skins {
+		outpath := path.Join(ctx.WebRoot, "assets", name+".gz")
+
+		// TODO clean up duplicate code
+
+		if ext == ".js" {
+			p := path.Join(ctx.BlogRoot, "skins", skin, name)
+			f, err := os.Open(p)
+			if os.IsNotExist(err) {
+				continue
+			} else if err != nil {
+				internalError("failed to read JavaScript file", err)
+			}
+			defer f.Close()
+
+			err = os.Remove(outpath + ".tmp")
+			if err != nil && !os.IsNotExist(err) {
+				internalError("could not remove temporary file", err)
+			}
+			// There is a race here: two processes could be creating the file
+			// at the same time.
+			outf, err := os.OpenFile(outpath+".tmp", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
+			if err != nil {
+				internalError("failed to open output JavaScript file", err)
+			}
+
+			gz := gzip.NewWriter(outf)
+			_, err = io.Copy(gz, f)
+			if err != nil {
+				internalError("could not compress JavaScript file", err)
+			}
+			gz.Close()
+
+			// This can be implemented faster by seeking and outputting the
+			// file, and then doing the sync+close+rename. Unfortunately, that
+			// doesn't seem to work so easily...
+			checkError(outf.Sync(), "could not sync data to tmpfile")
+			checkError(outf.Close(), "could not close tmpfile")
+			checkError(os.Rename(outpath+".tmp", outpath), "could not rename tmpfile")
+			OutputStatic(r, w, "text/javascript", outpath)
+			return
+
+		} else if ext == ".css" {
+			p := path.Join(ctx.BlogRoot, "skins", skin, name[:len(name)-len(ext)]+".scss")
+			_, err := os.Stat(p)
+			if os.IsNotExist(err) {
+				continue
+			} else if err != nil {
+				internalError("failed to stat SCSS file", err)
+			}
+
+			args := []string{"--default-encoding", "utf-8", "--no-cache"}
+			for _, s := range ctx.skins {
+				args = append(args, "-I", path.Join(ctx.BlogRoot, "skins", s))
+			}
+			args = append(args, p)
+
+			cmd := exec.Command("scss", args...)
+			stdout, err := cmd.StdoutPipe()
+			checkError(err, "could not get stdout")
+			checkError(cmd.Start(), "could not run scss")
+
+			err = os.Remove(outpath + ".tmp")
+			if err != nil && !os.IsNotExist(err) {
+				internalError("could not remove temporary file", err)
+			}
+			// There is a race here: two processes could be creating the file
+			// at the same time.
+			outf, err := os.OpenFile(outpath+".tmp", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
+			if err != nil {
+				internalError("failed to open output CSS file", err)
+			}
+
+			gz := gzip.NewWriter(outf)
+			_, err = io.Copy(gz, stdout)
+			if err != nil {
+				internalError("could not compress CSS file", err)
+			}
+			gz.Close()
+
+			checkError(cmd.Wait(), "could not finish scss")
+
+			// This can be implemented faster by seeking and outputting the
+			// file, and then doing the sync+close+rename. Unfortunately, that
+			// doesn't seem to work so easily...
+			checkError(outf.Sync(), "could not sync data to tmpfile")
+			checkError(outf.Close(), "could not close tmpfile")
+			checkError(os.Rename(outpath+".tmp", outpath), "could not rename tmpfile")
+			OutputStatic(r, w, "text/css", outpath)
+
+		} else {
+			NotFound(ctx, w, r)
+			return
+		}
 	}
 }
 

@@ -21,6 +21,7 @@ var Routes = []struct {
 	{"admin/edit/(?P<id>[1-9][0-9]*)/preview", PagePreviewHandler},
 	{"archive/", ArchiveHandler},
 	{"(?P<name>[a-z0-9]+(-[a-z0-9]+)*)", PageViewHandler},
+	{"assets/(?P<name>.*)", AssetHandler},
 }
 
 type Route struct {

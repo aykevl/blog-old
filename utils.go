@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -28,4 +29,17 @@ func lastTime(times ...time.Time) time.Time {
 	}
 
 	return t
+}
+
+func equalLastModified(t time.Time, req *http.Request) bool {
+	ims, err := time.Parse(time.RFC1123, req.Header.Get("If-Modified-Since"))
+	return err == nil && t.Equal(ims)
+	// Error means: there is no IMS header present, or the parser failed.
+	//
+	// According to rfc7231, an implementation MUST also parse certain
+	// legacy date formats.
+	// Because I don't think current HTTP clients still use them and a
+	// full reply is valid anyway, I'll only parse the recommended date
+	// format.
+	// See https://tools.ietf.org/html/rfc7231#section-7.1.1.1
 }

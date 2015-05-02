@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"os"
+	"path"
 	"time"
 
 	"database/sql"
@@ -15,15 +16,22 @@ import (
 
 type Context struct {
 	*Config
-	root          string
-	templateInfos map[string]TemplateInfo
-	db            *sql.DB
-	router        *Router
-	sessionStore  *south.Store
+	root         string
+	skinPages    map[string]SkinPage
+	skins        []string // list of [skin, parent skins...]
+	db           *sql.DB
+	router       *Router
+	sessionStore *south.Store
 }
 
-type TemplateInfo struct {
+type SkinPage struct {
+	skin  string
 	Files []string `json:"templates"`
+}
+
+type SkinJson struct {
+	Parent string              `json:"parent"`
+	Pages  map[string]SkinPage `json:"pages"`
 }
 
 func NewContext(root string) *Context {
@@ -83,43 +91,56 @@ func (c *Context) GetTemplateModified(name string) time.Time {
 	return t
 }
 
-// loadTemplateInfos reads info about templates if it hasn't been loaded
-func (c *Context) loadTemplateInfos() {
-	if (c.templateInfos != nil) {
+// loadSkin reads info about templates if it hasn't been loaded
+func (c *Context) loadSkin() {
+	if c.skinPages != nil {
 		return
 	}
+	c.skinPages = make(map[string]SkinPage)
 
-	f, err := os.Open(c.TemplateDirectory + "/templates.json")
-	if err != nil {
-		internalError("failed to open theme configuration file:", err)
-	}
+	skin := c.Skin
+	for skin != "" {
+		c.skins = append(c.skins, skin)
+		f, err := os.Open(path.Join(c.BlogRoot, "skins", skin, "skin.json"))
+		if err != nil {
+			internalError("failed to open skin configuration file:", err)
+		}
 
-	buf, err := ioutil.ReadAll(f)
-	if err != nil {
-		internalError("failed to read theme configuration file", err)
-	}
+		buf, err := ioutil.ReadAll(f)
+		if err != nil {
+			internalError("failed to read skin configuration file", err)
+		}
 
-	c.templateInfos = make(map[string]TemplateInfo)
-	err = json.Unmarshal(buf, &c.templateInfos)
-	if err != nil {
-		internalError("failed to parse theme configuration file", err)
+		skinJson := SkinJson{Pages: make(map[string]SkinPage)}
+		err = json.Unmarshal(buf, &skinJson)
+		if err != nil {
+			internalError("failed to parse skin configuration file", err)
+		}
+
+		for name, page := range skinJson.Pages {
+			if _, ok := c.skinPages[name]; !ok {
+				page.skin = skin
+				c.skinPages[name] = page
+			}
+		}
+		skin = skinJson.Parent
 	}
 }
 
 func (c *Context) getTemplatePaths(name string) (string, []string) {
-	c.loadTemplateInfos()
+	c.loadSkin()
 
-	info, ok := c.templateInfos[name]
+	page, ok := c.skinPages[name]
 	if !ok {
 		raiseError("could not find template " + name)
 	}
 
-	files := make([]string, len(info.Files))
-	for i, fn := range info.Files {
-		files[i] = c.TemplateDirectory + "/" + fn
+	files := make([]string, len(page.Files))
+	for i, fn := range page.Files {
+		files[i] = path.Join(c.BlogRoot, "skins", page.skin, fn)
 	}
 
-	return info.Files[0], files
+	return page.Files[0], files
 }
 
 func (c *Context) Close() {

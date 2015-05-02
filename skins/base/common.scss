@@ -1,0 +1,303 @@
+html {
+	box-sizing: border-box;
+	height: 100%;
+	padding: 0;
+}
+@media screen {
+	html {
+		background: #f8f8f8;
+	}
+}
+body {
+	box-sizing: border-box;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	margin: 0 auto;
+	padding: 1px 16px;
+	max-width: 48em;
+	font-family: "FreeSerif", serif;
+}
+
+@media (min-width: 960px) {
+	html {
+		padding-left: calc(100vw - 100%);
+	}
+}
+
+body > * {
+	flex-shrink: 0;
+}
+
+/* MediaWiki link styles */
+a {
+	text-decoration: none;
+	color: #0645ad;
+}
+
+a:visited {
+	color: #0b0080;
+}
+
+a:active {
+	color: #faa700;
+}
+
+a:hover, a:focus {
+	text-decoration: underline;
+}
+
+a img {
+	/* IE fix */
+	border: none;
+}
+
+pre,
+code,
+kbd,
+samp {
+	/* see http://code.stephenmorley.org/html-and-css/fixing-browsers-broken-monospace-font-handling/ */
+	font-family: monospace,monospace;
+	/*font-size: 0.776em;*/
+	font-size: 0.812rem;
+}
+
+input,
+textarea {
+	margin: 2px 0;
+}
+input[type=text],
+textarea {
+	box-sizing: border-box;
+	background: white;
+	border: 1px solid #bbb;
+}
+input[type=text]:not(.classic),
+textarea {
+	color: inherit;
+	font-size: inherit;
+	font-family: inherit;
+	line-height: inherit;
+}
+textarea {
+	display: block;
+	width: 100%;
+	resize: vertical;
+}
+input.wide {
+	width: 100%;
+}
+
+pre {
+	tab-size: 4;
+	overflow-x: auto;
+	margin-left: 2rem;
+}
+
+p.error {
+	color: #440000;
+}
+p.warning {
+	color: #333300;
+}
+p.error {
+	background: hsla(0, 100%, 50%, 0.12);
+}
+p.warning {
+	background: hsla(60, 100%, 50%, 0.22);
+}
+p.error,
+p.warning{
+	padding: 4px 7px;
+	border-radius: 4px;
+}
+p.error:before,
+p.warning:before {
+	content: '⚠ ';
+}
+
+header {
+	display: flex;
+	justify-content: space-between;
+	border-bottom: 1px dotted #bbb;
+}
+
+#title {
+	display: inline-block;
+	margin: 0;
+	padding: 35px 0;
+	font-size: 2rem;
+	font-weight: bold;
+	color: #666;
+	font-family: "FreeSerif", serif;
+	text-decoration: none;
+}
+#title .text {
+	display: inline-block;
+	border-bottom: 1px solid transparent;
+}
+#title:hover .text {
+	border-bottom: 1px solid #666;
+}
+#title .avatar {
+	vertical-align: bottom;
+	opacity: 0.8;
+	padding-right: 2px;
+}
+@media (max-width: 820px) {
+	#title {
+		padding: 15px 0;
+	}
+}
+@media (max-width: 600px) {
+	#title {
+		font-size: 1.6rem;
+	}
+}
+@media (max-width: 500px) {
+	#title {
+		font-size: 1.3rem;
+	}
+	#title .avatar {
+		width: 28px;
+		height: 28px;
+		padding-right: 5px;
+	}
+}
+@media print {
+	#title {
+		color: black;
+		padding-top: 0;
+	}
+}
+
+#menu {
+	float: right;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+@media print {
+	#menu {
+		display: none;
+	}
+}
+
+#menu a {
+	display: block;
+	color: #444;
+}
+
+main {
+	font-size: 1.35rem;
+	font-family: "Times New Roman", serif;
+	line-height: 1.35;
+	margin-bottom: 10px;
+	flex: 1 0 auto;
+}
+@media print {
+	main {
+		font-size: 12pt;
+	}
+}
+
+main h1 {
+	font-size: 1.6rem;
+	margin-top: 14px;
+	margin-bottom: 0;
+	font-family: Verdana, sans-serif;
+	font-weight: normal;
+}
+@media screen {
+	main h1 {
+		color: #555;
+	}
+}
+main h1 a:link,
+main h1 a:visited {
+	color: inherit;
+}
+main h2 {
+	font-weight: normal;
+	font-size: 1.25rem;
+	font-family: Verdana, sans-serif;
+}
+@media screen {
+	main h2 {
+		color: #555;
+	}
+}
+
+article > a {
+	display: block;
+}
+article > a:link,
+article > a:visited {
+	color: inherit;
+	text-decoration: none;
+}
+article > a:hover > h1 {
+	text-decoration: underline;
+}
+
+article .published,
+article .modified {
+	font-size: 0.85rem;
+	font-family: Verdana;
+}
+article .published {
+	display: block;
+	margin-top: 4px;
+}
+article .modified {
+	text-align: right;
+}
+@media screen {
+	article .published,
+	article .modified {
+		color: #999;
+	}
+}
+@media print {
+	article .published,
+	article .modified {
+		font-size: 0.70rem;
+	}
+}
+
+@media (max-width: 430px) {
+	main h1 {
+		margin-top: 10px;
+	}
+	article .published {
+		font-size: 0.75rem;
+	}
+}
+
+
+/* article in a list of articles */
+article:not(:first-child) {
+	border-top: 1px dashed #bbb;
+	padding-top: 10px;
+}
+article:not(:last-child) {
+	padding-bottom: 10px;
+}
+
+footer {
+	margin-top: 0;
+	border-top: 1px dotted #bbb;
+	padding-top: 15px;
+	text-align: center;
+	margin-bottom: 25px;
+}
+footer a:link,
+footer a:visited {
+	font-family: Verdana, sans-serif;
+	color: #333;
+}
+@media print {
+	footer {
+		display: none;
+	}
+}
