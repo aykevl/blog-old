@@ -151,6 +151,7 @@ func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values V
 
 	ext := path.Ext(name)
 
+	ctx.loadSkin()
 	for _, skin := range ctx.skins {
 		outpath := path.Join(ctx.WebRoot, "assets", name+".gz")
 
