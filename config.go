@@ -30,7 +30,6 @@ type ConfigData struct {
 	SiteRoot           string `json:"siterooturl"`
 	Origin             string `json:"origin"`
 	Insecure           bool   `json:"insecure"`
-	Assets             string `json:"assets"`
 	DatabaseType       string `json:"database-type"`
 	DatabaseConnection string `json:"database-connect"`
 	SessionKey         string `json:"sessionkey"`

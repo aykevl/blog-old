@@ -35,7 +35,7 @@ func NewView(ctx *Context) *ViewBase {
 	if v.ctx.SiteTitle == "" {
 		v.data["siteTitle"] = "Blog"
 	}
-	v.data["assets"] = v.ctx.Assets
+	v.data["assets"] = "/assets"
 	v.data["admin"] = v.ctx.SiteRoot + "/admin"
 	return &v
 }
