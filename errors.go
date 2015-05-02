@@ -31,7 +31,7 @@ func checkError(err error, reason interface{}) {
 }
 
 // raiseError throws an error without needing an error type
-func raiseError(reason string) {
+func raiseError(reason interface{}) {
 	internalError(reason, nil)
 }
 
