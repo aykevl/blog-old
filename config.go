@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"path"
 
 	"github.com/aykevl/south"
 )
@@ -79,6 +80,11 @@ func (c *Config) Update() {
 
 	out, err := json.MarshalIndent(c.ConfigData, "", "\t")
 	checkError(err, "error while serializing JSON")
+
+	err = os.MkdirAll(path.Dir(c.configPath), 0777)
+	if err != nil {
+		internalError("could not create parent directory 'etc'", err)
+	}
 
 	err = ioutil.WriteFile(c.configPath+".tmp", out, 0600)
 	checkError(err, "error while writing temporary config file")
