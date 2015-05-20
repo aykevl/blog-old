@@ -17,7 +17,11 @@ func internalError(reason interface{}, err error) {
 		fmt.Println("Content-Type: text/html; charset=utf-8\n")
 		error500Template.Execute(os.Stdout, map[string]interface{}{"Reason": reason, "Error": err})
 	case REQUEST_TYPE_CLI:
-		fmt.Printf("%s: %s\n", reason, err)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s: %s\n", reason, err)
+		} else {
+			fmt.Fprintln(os.Stderr, reason)
+		}
 	default:
 		panic("unknown request type")
 	}
