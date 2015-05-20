@@ -37,6 +37,13 @@ func NewContext(root string) *Context {
 	var c Context
 	c.Config = loadConfig(root)
 
+	if c.DatabaseType == "sqlite3" {
+		err := os.MkdirAll(path.Dir(c.DatabaseConnection), 0777)
+		if err != nil {
+			internalError("could not create database parent directory 'data'", err)
+		}
+	}
+
 	// Set up database connection.
 	db, err := sql.Open(c.DatabaseType, c.DatabaseConnection)
 	if err != nil {
