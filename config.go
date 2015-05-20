@@ -34,6 +34,7 @@ type ConfigData struct {
 	URLPrefix          string `json:"urlprefix"`        // for example "/blog", may be empty (default)
 	Origin             string `json:"origin"`           // start of URL, for example "http://example.com"
 	Secure             bool   `json:"secure"`           // all requests go over a secure connection
+	HSTSMaxAge         int    `json:"hsts-max-age"`     // HTTP Strict Transport Security max-age (in seconds, 0 to disable)
 	DatabaseType       string `json:"database-type"`    // for example "sqlite3"
 	DatabaseConnection string `json:"database-connect"` // for example path to sqlite3 file
 	SessionKey         string `json:"sessionkey"`       // 32-byte random base64-encoded key used to sign session cookies
@@ -50,6 +51,7 @@ func loadConfig(root string) *Config {
 	c.Skin = "base"
 	c.SiteTitle = "Blog"
 	c.Secure = true
+	c.HSTSMaxAge = 15552000 // 180 days
 	c.DatabaseType = "sqlite3"
 	c.DatabaseConnection = root + DB_PATH
 	c.BlogPath = root + "/src/" + IMPORT_PATH

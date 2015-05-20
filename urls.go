@@ -4,6 +4,7 @@ import (
 	"crypto/subtle"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -79,6 +80,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	path := req.URL.Path[len(r.root):]
+
+	if r.ctx.Secure && r.ctx.HSTSMaxAge != 0 {
+		maxAge := strconv.Itoa(r.ctx.HSTSMaxAge)
+		w.Header().Set("Strict-Transport-Security", "max-age="+maxAge+"; includeSubDomains")
+	}
 
 	if req.Method != "GET" && req.Method != "HEAD" {
 		if !r.validateCSRF(req) {
