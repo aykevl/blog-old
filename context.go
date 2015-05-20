@@ -54,7 +54,7 @@ func NewContext(root string) *Context {
 func (c *Context) SessionStore() *south.Store {
 	if c.sessionStore == nil {
 		// TODO define admin URL in one place
-		sessionStore, err := south.New(c.SessionKey, c.SiteRoot+"/admin/")
+		sessionStore, err := south.New(c.SessionKey, c.URLPrefix+"/admin/")
 		checkError(err, "could not create session store")
 		c.sessionStore = sessionStore
 	}
@@ -101,7 +101,7 @@ func (c *Context) loadSkin() {
 	skin := c.Skin
 	for skin != "" {
 		c.skins = append(c.skins, skin)
-		f, err := os.Open(path.Join(c.BlogRoot, "skins", skin, "skin.json"))
+		f, err := os.Open(path.Join(c.BlogPath, "skins", skin, "skin.json"))
 		if err != nil {
 			internalError("failed to open skin configuration file:", err)
 		}
@@ -137,7 +137,7 @@ func (c *Context) getTemplatePaths(name string) (string, []string) {
 
 	files := make([]string, len(page.Files))
 	for i, fn := range page.Files {
-		files[i] = path.Join(c.BlogRoot, "skins", page.skin, fn)
+		files[i] = path.Join(c.BlogPath, "skins", page.skin, fn)
 	}
 
 	return page.Files[0], files

@@ -40,7 +40,7 @@ func NewRouter(ctx *Context) *Router {
 
 	r.ctx = ctx
 
-	r.root = ctx.SiteRoot
+	r.root = ctx.URLPrefix
 	if !strings.HasSuffix(r.root, "/") {
 		r.root += "/"
 	}

@@ -166,6 +166,22 @@ func commandInstall(ctx *Context, _ []string) {
 		fmt.Println("Generating session sign key")
 		generateSessionKey(ctx)
 	}
+
+	// Write all config out, even if there didn't seem to be any changes. This
+	// sets defaults so things won't break on upgrades.
+	ctx.Update()
+
+	var undefinedVars []string
+	if ctx.Origin == "" {
+		undefinedVars = append(undefinedVars, "origin")
+	}
+	if ctx.WebRoot == "" {
+		undefinedVars = append(undefinedVars, "webroot")
+	}
+
+	if len(undefinedVars) != 0 {
+		fmt.Println("Warning: you have a few undefined variables:", strings.Join(undefinedVars, ", "))
+	}
 }
 
 func commandImportDB(ctx *Context, args []string) {
@@ -379,10 +395,10 @@ func commandSecure(ctx *Context, args []string) {
 	v := strings.ToLower(args[0])
 	switch v {
 	case "on", "yes", "1":
-		ctx.Insecure = false
+		ctx.Secure = true
 		fmt.Println("Enabled enforcing security.")
 	case "off", "no", "0":
-		ctx.Insecure = true
+		ctx.Secure = false
 		fmt.Println("Disabled enforcing security.")
 	default:
 		fmt.Fprintln(os.Stderr, `Invalid boolean. Use "on" or "off".`)

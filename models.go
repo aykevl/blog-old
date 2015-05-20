@@ -250,7 +250,7 @@ func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error
 		checkError(err, "could not create token")
 
 		cookie := token.Cookie()
-		cookie.Secure = !ctx.Insecure
+		cookie.Secure = ctx.Secure
 
 		h := w.Header()
 		h.Set("Set-Cookie", cookie.String())

@@ -10,6 +10,8 @@ import (
 )
 
 const CONFIG_PATH = "/etc/blog.json"
+const DB_PATH = "/data/blog.sqlite3"
+const IMPORT_PATH = "github.com/aykevl/blog"
 
 type Config struct {
 	// non-configuration variables
@@ -22,33 +24,32 @@ type Config struct {
 
 type ConfigData struct {
 	// configuration variables
-	Skin               string `json:"skin"`
-	SiteTitle          string `json:"title"`
-	PostsDirectory     string `json:"posts"`
-	WebRoot            string `json:"webroot"`
-	BlogRoot           string `json:"blogroot"`
-	SiteRoot           string `json:"siterooturl"`
-	Origin             string `json:"origin"`
-	Insecure           bool   `json:"insecure"`
-	DatabaseType       string `json:"database-type"`
-	DatabaseConnection string `json:"database-connect"`
-	SessionKey         string `json:"sessionkey"`
+	Skin               string `json:"skin"`             // skin, default is "base"
+	SiteTitle          string `json:"title"`            // blog title, default is "Blog"
+	WebRoot            string `json:"webroot"`          // like "/var/www"
+	BlogPath           string `json:"blogpath"`         // full path of source directory
+	URLPrefix          string `json:"urlprefix"`        // for example "/blog", may be empty (default)
+	Origin             string `json:"origin"`           // start of URL, for example "http://example.com"
+	Secure             bool   `json:"secure"`           // all requests go over a secure connection
+	DatabaseType       string `json:"database-type"`    // for example "sqlite3"
+	DatabaseConnection string `json:"database-connect"` // for example path to sqlite3 file
+	SessionKey         string `json:"sessionkey"`       // 32-byte random base64-encoded key used to sign session cookies
 }
 
 func loadConfig(root string) *Config {
 	var c Config
+
+	// Defaults
+	c.Skin = "base"
+	c.SiteTitle = "Blog"
+	c.Secure = true
+	c.DatabaseType = "sqlite3"
+	c.DatabaseConnection = root + DB_PATH
+	c.BlogPath = root + "/src/" + IMPORT_PATH
+
 	c.load(root)
 
 	c.SessionKey = decodeKey(c.ConfigData.SessionKey)
-
-	// Defaults
-
-	if c.SiteTitle == "" {
-		c.SiteTitle = "Blog"
-	}
-	if c.DatabaseType == "" {
-		c.DatabaseType = "sqlite3"
-	}
 
 	return &c
 }

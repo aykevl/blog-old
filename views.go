@@ -30,13 +30,10 @@ func NewView(ctx *Context) *ViewBase {
 	var v ViewBase
 	v.ctx = ctx
 	v.data = make(map[string]interface{}, 3)
-	v.data["base"] = v.ctx.Origin + v.ctx.SiteRoot
+	v.data["base"] = v.ctx.URLPrefix
 	v.data["siteTitle"] = v.ctx.SiteTitle
-	if v.ctx.SiteTitle == "" {
-		v.data["siteTitle"] = "Blog"
-	}
-	v.data["assets"] = "/assets"
-	v.data["admin"] = v.ctx.SiteRoot + "/admin"
+	v.data["assets"] = v.ctx.URLPrefix + "/assets"
+	v.data["admin"] = v.ctx.Origin + v.ctx.URLPrefix + "/admin"
 	return &v
 }
 
@@ -158,7 +155,7 @@ func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values V
 		// TODO clean up duplicate code
 
 		if ext == ".js" {
-			p := path.Join(ctx.BlogRoot, "skins", skin, name)
+			p := path.Join(ctx.BlogPath, "skins", skin, name)
 			f, err := os.Open(p)
 			if os.IsNotExist(err) {
 				continue
@@ -195,7 +192,7 @@ func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values V
 			return
 
 		} else if ext == ".css" {
-			p := path.Join(ctx.BlogRoot, "skins", skin, name[:len(name)-len(ext)]+".scss")
+			p := path.Join(ctx.BlogPath, "skins", skin, name[:len(name)-len(ext)]+".scss")
 			_, err := os.Stat(p)
 			if os.IsNotExist(err) {
 				continue
@@ -205,7 +202,7 @@ func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values V
 
 			args := []string{"--default-encoding", "utf-8", "--no-cache"}
 			for _, s := range ctx.skins {
-				args = append(args, "-I", path.Join(ctx.BlogRoot, "skins", s))
+				args = append(args, "-I", path.Join(ctx.BlogPath, "skins", s))
 			}
 			args = append(args, p)
 
@@ -370,7 +367,7 @@ func PageEditHandler(ctx *Context, w http.ResponseWriter, r *http.Request, value
 
 		if r.PostFormValue("publish") != "" {
 			page.Publish(ctx)
-			w.Header().Set("Location", ctx.SiteRoot+page.Url())
+			w.Header().Set("Location", ctx.URLPrefix+page.Url())
 		} else if r.PostFormValue("unpublish") != "" {
 			page.Unpublish(ctx)
 			w.Header().Set("Location", r.URL.String())
