@@ -16,7 +16,6 @@ import (
 
 type Context struct {
 	*Config
-	root         string
 	skinPages    map[string]SkinPage
 	skins        []string // list of [skin, parent skins...]
 	db           *sql.DB
