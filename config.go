@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path"
 
@@ -37,10 +38,13 @@ type ConfigData struct {
 	DatabaseConnection string `json:"database-connect"` // for example path to sqlite3 file
 	SessionKey         string `json:"sessionkey"`       // 32-byte random base64-encoded key used to sign session cookies
 	FastCGISocketPath  string `json:"fcgi-path"`        // FastCGI socket path
+
+	OriginURL *url.URL // Parsed 'Origin' field
 }
 
 func loadConfig(root string) *Config {
 	var c Config
+	var err error
 
 	// Defaults
 	c.Skin = "base"
@@ -54,6 +58,10 @@ func loadConfig(root string) *Config {
 	c.load(root)
 
 	c.SessionKey = decodeKey(c.ConfigData.SessionKey)
+	c.OriginURL, err = url.Parse(c.Origin)
+	if err != nil {
+		internalError("could not parse origin URL in config", err)
+	}
 
 	return &c
 }

@@ -292,6 +292,16 @@ func ArchiveHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values
 }
 
 func AuthenticatedView(ctx *Context, w http.ResponseWriter, r *http.Request) *ViewBase {
+	// Require authenticated views to be of the canonical origin.
+	if ctx.OriginURL.Scheme != r.URL.Scheme ||
+		ctx.OriginURL.Host != r.URL.Host { // host can also mean host:port
+		u := *r.URL
+		u.Scheme = ctx.OriginURL.Scheme
+		u.Host = ctx.OriginURL.Host
+		w.Header().Set("Location", u.String())
+		w.Header().Set("Content-Length", "0")
+		w.WriteHeader(303)
+	}
 	user, err := NewUser(ctx, w, r)
 	if user == nil {
 		view := NewView(ctx)
