@@ -12,6 +12,7 @@ import (
 const CONFIG_PATH = "/etc/blog.json"
 const DB_PATH = "/data/blog.sqlite3"
 const IMPORT_PATH = "github.com/aykevl/blog"
+const FCGI_PATH = "/.blog-fcgi.sock"
 
 type Config struct {
 	// non-configuration variables
@@ -34,6 +35,7 @@ type ConfigData struct {
 	DatabaseType       string `json:"database-type"`    // for example "sqlite3"
 	DatabaseConnection string `json:"database-connect"` // for example path to sqlite3 file
 	SessionKey         string `json:"sessionkey"`       // 32-byte random base64-encoded key used to sign session cookies
+	FastCGISocketPath  string `json:"fcgi-path"`        // FastCGI socket path
 }
 
 func loadConfig(root string) *Config {
@@ -46,6 +48,7 @@ func loadConfig(root string) *Config {
 	c.DatabaseType = "sqlite3"
 	c.DatabaseConnection = root + DB_PATH
 	c.BlogPath = root + "/src/" + IMPORT_PATH
+	c.FastCGISocketPath = root + FCGI_PATH
 
 	c.load(root)
 

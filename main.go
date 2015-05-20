@@ -56,12 +56,12 @@ func main() {
 	}
 
 	ctx := NewContext(root)
+	defer ctx.Close()
 
-	if os.Getenv("REQUEST_METHOD") == "" {
-		handleCLI(ctx)
-	} else {
+	if os.Getenv("REQUEST_METHOD") != "" {
 		serveCGI(ctx)
+	} else {
+		// includes FastCGI
+		handleCLI(ctx)
 	}
-
-	ctx.Close()
 }

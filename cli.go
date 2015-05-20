@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"net"
+	"net/http/fcgi"
 	"net/mail"
 	"os"
 	"path"
@@ -28,6 +30,7 @@ func init() {
 	// loop: http://code.google.com/p/go/issues/detail?id=1817
 	// (This works as intended and is not a bug in the compiler.)
 	cmds := map[string]Command{
+		"fcgi":    Command{commandFastCGI, 0, "Run FastCGI server"},
 		"help":    Command{commandList, 0, "List all available commands"},
 		"install": Command{commandInstall, 0, "Install blog"},
 		"import":  Command{commandImportDB, 1, "Import stored data from folder - overwrites existing data!"},
@@ -37,6 +40,14 @@ func init() {
 		"secure":  Command{commandSecure, 1, "Toggle security setting (on, off)"},
 	}
 	commands = cmds
+}
+
+func commandFastCGI(ctx *Context, _ []string) {
+	socket, err := net.Listen("unix", ctx.FastCGISocketPath)
+	if err != nil {
+		internalError("could not open fcgi socket file", err)
+	}
+	fcgi.Serve(socket, ctx.router)
 }
 
 func commandList(ctx *Context, _ []string) {
