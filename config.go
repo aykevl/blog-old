@@ -23,6 +23,7 @@ type Config struct {
 	ConfigData
 
 	SessionKey []byte
+	OriginURL  *url.URL // Parsed 'Origin' field
 }
 
 type ConfigData struct {
@@ -39,8 +40,6 @@ type ConfigData struct {
 	DatabaseConnection string `json:"database-connect"` // for example path to sqlite3 file
 	SessionKey         string `json:"sessionkey"`       // 32-byte random base64-encoded key used to sign session cookies
 	FastCGISocketPath  string `json:"fcgi-path"`        // FastCGI socket path
-
-	OriginURL *url.URL // Parsed 'Origin' field
 }
 
 func loadConfig(root string) *Config {
