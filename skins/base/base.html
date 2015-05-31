@@ -18,12 +18,8 @@
 				<span class="text">{{.siteTitle}}</span>
 			</a>
 			<div id="menu">
-{{range .menu}}
-				<a href="{{$.base}}{{.Url}}">{{.Title}}</a>
-{{end}}
-{{if .user}}
-				<a href="{{$.admin}}/">Admin</a>
-{{end}}
+{{/* no spaces allowed here */}}
+{{range .menu}}<a href="{{$.base}}{{.Url}}">{{.Title}}</a>{{end}}{{if .user}}<a href="{{$.admin}}/">Admin</a>{{end}}
 			</div>
 		</header>
 

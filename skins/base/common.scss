@@ -19,6 +19,10 @@ body {
 	font-family: "FreeSerif", serif;
 }
 
+p {
+	margin: 0.7em 0;
+}
+
 @media (min-width: 960px) {
 	html {
 		padding-left: calc(100vw - 100%);
@@ -91,7 +95,7 @@ input.wide {
 pre {
 	tab-size: 4;
 	overflow-x: auto;
-	margin-left: 2rem;
+	padding-left: 2rem;
 }
 
 p.error {
@@ -144,6 +148,16 @@ header {
 	opacity: 0.8;
 	padding-right: 2px;
 }
+#menu {
+	float: right;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+#menu a {
+	display: block;
+	color: #444;
+}
 @media (max-width: 820px) {
 	#title {
 		padding: 15px 0;
@@ -163,29 +177,44 @@ header {
 		height: 28px;
 		padding-right: 5px;
 	}
+
+	pre {
+		padding-left: 1rem;
+	}
+}
+@media (max-width: 370px) {
+	header {
+		display: block;
+	}
+	#title {
+		display: block;
+		padding-bottom: 5px;
+	}
+	#menu {
+		display: block;
+		float: none;
+		text-align: right;
+		padding-bottom: 12px;
+	}
+	#menu a {
+		display: inline-block;
+	}
+	#menu a:not(:last-child) {
+		padding-right: 5px;
+	}
+	#menu a:not(:first-child) {
+		border-left: 1px solid #bbb;
+		padding-left: 5px;
+	}
 }
 @media print {
 	#title {
 		color: black;
 		padding-top: 0;
 	}
-}
-
-#menu {
-	float: right;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-}
-@media print {
 	#menu {
 		display: none;
 	}
-}
-
-#menu a {
-	display: block;
-	color: #444;
 }
 
 main {
@@ -221,10 +250,11 @@ main h2 {
 	font-weight: normal;
 	font-size: 1.25rem;
 	font-family: Verdana, sans-serif;
+	margin: 1.3em 0 0.6em 0;
 }
 @media screen {
 	main h2 {
-		color: #555;
+		color: #222;
 	}
 }
 
