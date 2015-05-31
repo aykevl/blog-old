@@ -10,9 +10,9 @@
 		<script src="{{.assets}}/common.js" async></script>
 {{template "head" .}}
 	</head>
-	<body>
+	<body vocab="http://schema.org/" typeof="{{template "schemaType" .}}">
 
-		<header>
+		<header typeof="WPHeader">
 			<a href="{{$.base}}/" id="title">
 				<img src="{{.assets}}/logo.png" class="avatar" width="43" height="43"/>
 				<span class="text">{{.siteTitle}}</span>
@@ -27,7 +27,7 @@
 {{template "body" .}}
 		</main>
 
-		<footer>
+		<footer typeof="WPFooter">
 			<nav>
 				<a href="{{$.base}}/archive/">Archive</a>
 			</nav>

@@ -1,3 +1,5 @@
+{{define "schemaType"}}WebPage{{end}}
+
 {{define "head"}}
 {{if .page.Summary}}
 		<meta name="description" content="{{.page.Summary}}"/>
@@ -5,9 +7,11 @@
 {{end}}
 
 {{define "body"}}
-<article class="page">
-	<h1><a href="{{$.base}}{{.page.Url}}">{{.page.Title}}</a></h1>
+<article class="page" property="mainEntity" typeof="WebPage">
+	<h1 property="headline name"><a href="{{$.base}}{{.page.Url}}" property="url">{{.page.Title}}</a></h1>
+	<div property="text">
 {{markdown .page.Text}}
-	<div class="modified">Updated: <time datetime="{{timestamp .page.Modified}}">{{date .page.Modified}}</time></div>
+	</div>
+	<div class="modified">Updated: <time datetime="{{timestamp .page.Modified}}" property="dateModified">{{date .page.Modified}}</time></div>
 </article>
 {{end}}

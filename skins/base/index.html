@@ -1,9 +1,11 @@
+{{define "schemaType"}}Blog{{end}}
+
 {{define "body"}}
 {{range .posts}}
-<article class="post">
-	<h1><a href="{{$.base}}{{.Url}}">{{.Title}}</a></h1>
+<article class="post" property="blogPost" typeof="BlogPosting">
+	<h1 property="headline name"><a href="{{$.base}}{{.Url}}" property="url">{{.Title}}</a></h1>
 	<time datetime="{{timestamp .Published}}" class="published">{{date .Published}}</time>
-	<p>{{markdown .Summary}}</p>
+	<p property="description">{{markdown .Summary}}</p>
 </article>
 {{end}}
 {{end}}
