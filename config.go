@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"syscall"
 
 	"github.com/aykevl/south"
 )
@@ -18,12 +19,14 @@ const FCGI_PATH = "/.blog-fcgi.sock"
 
 type Config struct {
 	// non-configuration variables
-	configPath string
+	path string
+	stat os.FileInfo
 
 	ConfigData
 
-	SessionKey []byte
-	OriginURL  *url.URL // Parsed 'Origin' field
+	// Some fields derived from config data
+	OriginURL  *url.URL // Parsed Origin field
+	SessionKey []byte   // Decoded SessionKey
 }
 
 type ConfigData struct {
@@ -66,14 +69,19 @@ func loadConfig(root string) *Config {
 }
 
 func (c *Config) load(root string) {
-	c.configPath = root + CONFIG_PATH
+	var err error
 
-	f, err := os.Open(c.configPath)
+	c.path = root + CONFIG_PATH
+
+	f, err := os.Open(c.path)
 	if os.IsNotExist(err) {
 		return
 	} else {
 		checkError(err, "failed to open configuration file")
 	}
+
+	c.stat, err = f.Stat()
+	checkError(err, "failed to stat configuration file")
 
 	buf, err := ioutil.ReadAll(f)
 	checkError(err, "failed to read configuration file")
@@ -84,18 +92,49 @@ func (c *Config) load(root string) {
 
 func (c *Config) Update() {
 	c.ConfigData.SessionKey = encodeKey(c.SessionKey)
+	c.save()
+}
 
+func (c *Config) save() {
 	out, err := json.MarshalIndent(c.ConfigData, "", "\t")
 	checkError(err, "error while serializing JSON")
 
-	err = os.MkdirAll(path.Dir(c.configPath), 0777)
+	err = os.MkdirAll(path.Dir(c.path), 0777)
 	checkError(err, "could not create parent directory 'etc'")
 
-	err = ioutil.WriteFile(c.configPath+".tmp", out, 0600)
-	checkError(err, "error while writing temporary config file")
+	perm := os.FileMode(0600)
+	var uid, gid int
+	if c.stat != nil {
+		st := c.stat.Sys()
+		switch st := st.(type) {
+		case *syscall.Stat_t:
+			perm = os.FileMode(st.Mode) & os.ModePerm
+			// This conversion is necessary as Chown takes ints and st.Xid are
+			// uint32 types.
+			uid = int(st.Uid)
+			gid = int(st.Gid)
+		}
+	}
 
-	err = os.Rename(c.configPath+".tmp", c.configPath)
-	checkError(err, "error while writing renaming config file")
+	f, err := os.OpenFile(c.path+".tmp", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
+	checkError(err, "could not open temporary config file")
+	n, err := f.Write(out)
+	checkError(err, "error while writing temporary config file")
+	if n != len(out) {
+		raiseError("could not write all config data to temporary config file")
+	}
+
+	if uid != 0 && gid != 0 {
+		// reset uid and gid to what they were before
+		err = f.Chown(uid, gid)
+		checkWarning(err, "could not chown temporary config file")
+	}
+
+	checkError(f.Sync(), "error syncing temporary config file")
+	checkError(f.Close(), "error closing temporary config file")
+
+	err = os.Rename(c.path+".tmp", c.path)
+	checkError(err, "error while renaming config file")
 }
 
 func encodeKey(key []byte) string {
