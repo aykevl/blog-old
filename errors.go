@@ -10,7 +10,7 @@ var error500Template *template.Template
 
 const error500TemplateText = "<h1>500 Internal Server Error</h1><p>{{.Reason}}: {{.Error}}</p>\n"
 
-func internalError(reason interface{}, err error) {
+func internalError(reason interface{}, err error, fatal bool) {
 	switch requestType() {
 	case REQUEST_TYPE_CGI:
 		fmt.Println("Status: 500")
@@ -25,18 +25,27 @@ func internalError(reason interface{}, err error) {
 	default:
 		panic("unknown request type")
 	}
-	os.Exit(1)
+	if fatal {
+		os.Exit(1)
+	}
 }
 
 func checkError(err error, reason interface{}) {
 	if err != nil {
-		internalError(reason, err)
+		internalError(reason, err, true)
+	}
+}
+
+// checkWarning print an error message if there's an error without exiting.
+func checkWarning(err error, reason interface{}) {
+	if err != nil {
+		internalError(reason, err, false)
 	}
 }
 
 // raiseError throws an error without needing an error type
 func raiseError(reason interface{}) {
-	internalError(reason, nil)
+	internalError(reason, nil, true)
 }
 
 func init() {

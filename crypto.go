@@ -7,9 +7,7 @@ import (
 
 func storePassword(password string) string {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		internalError("cannot generate hash from password", err)
-	}
+	checkError(err, "cannot generate hash from password")
 	return string(hash)
 }
 
@@ -20,16 +18,14 @@ func verifyPassword(password, hash string) bool {
 	} else if err == bcrypt.ErrMismatchedHashAndPassword {
 		return false
 	} else {
-		internalError("cannot verify password", err)
+		internalError("cannot verify password", err, true)
 		panic("unreachable")
 	}
 }
 
 func generateSessionKey(ctx *Context) {
 	sessionKey, err := south.GenerateKey()
-	if err != nil {
-		internalError("could not generate session key", err)
-	}
+	checkError(err, "could not generate session key")
 	ctx.SessionKey = sessionKey
 	ctx.Config.Update()
 }

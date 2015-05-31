@@ -49,7 +49,7 @@ func NewPage(pageType PageType) *Page {
 func PageFromQuery(ctx *Context, pageType PageType, hint Hint, whereClause, otherClauses string, args ...interface{}) *Page {
 	pages := PagesFromQuery(ctx, pageType, hint, whereClause, otherClauses, args...)
 	if len(pages) > 1 {
-		internalError("tried to fetch one page, but got more", nil)
+		raiseError("tried to fetch one page, but got more than one")
 	}
 
 	if len(pages) == 0 {
@@ -87,9 +87,7 @@ func PagesFromQuery(ctx *Context, pageType PageType, hint Hint, whereClause, oth
 	query += otherClauses
 
 	rows, err := ctx.db.Query(query, args...)
-	if err != nil {
-		internalError("failed to fetch list of pages", err)
-	}
+	checkError(err, "failed to fetch list of pages")
 	defer rows.Close()
 
 	for rows.Next() {
@@ -105,9 +103,7 @@ func PagesFromQuery(ctx *Context, pageType PageType, hint Hint, whereClause, oth
 
 			page.Created = importTime(createdUnix)
 		}
-		if err != nil {
-			internalError("failed to scan page info", err)
-		}
+		checkError(err, "failed to scan page info")
 
 		page.Published = importTime(publishedUnix)
 		page.Modified = importTime(modifiedUnix)
@@ -237,9 +233,8 @@ func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error
 		if err == sql.ErrNoRows {
 			// no user with this email address
 			return nil, ErrInvalidUser
-		} else if err != nil {
-			internalError("could not fetch information about user", err)
 		}
+		checkError(err, "could not fetch information about user")
 
 		if !verifyPassword(r.PostFormValue("password"), passwordHash) {
 			// password doesn't match
@@ -276,9 +271,7 @@ func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error
 		u := User{}
 		row := ctx.db.QueryRow("SELECT fullname,email FROM users WHERE email=?", token.Id())
 		err = row.Scan(&u.name, &u.email)
-		if err != nil {
-			internalError("cannot fetch user from database", err)
-		}
+		checkError(err, "cannot fetch user from database")
 
 		return &u, nil
 	}

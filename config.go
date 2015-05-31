@@ -60,9 +60,7 @@ func loadConfig(root string) *Config {
 
 	c.SessionKey = decodeKey(c.ConfigData.SessionKey)
 	c.OriginURL, err = url.Parse(c.Origin)
-	if err != nil {
-		internalError("could not parse origin URL in config", err)
-	}
+	checkError(err, "could not parse origin URL in config")
 
 	return &c
 }
@@ -91,9 +89,7 @@ func (c *Config) Update() {
 	checkError(err, "error while serializing JSON")
 
 	err = os.MkdirAll(path.Dir(c.configPath), 0777)
-	if err != nil {
-		internalError("could not create parent directory 'etc'", err)
-	}
+	checkError(err, "could not create parent directory 'etc'")
 
 	err = ioutil.WriteFile(c.configPath+".tmp", out, 0600)
 	checkError(err, "error while writing temporary config file")

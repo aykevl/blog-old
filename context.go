@@ -39,9 +39,7 @@ func NewContext(root string) *Context {
 
 	if c.DatabaseType == "sqlite3" {
 		err := os.MkdirAll(path.Dir(c.DatabaseConnection), 0777)
-		if err != nil {
-			internalError("could not create database parent directory 'data'", err)
-		}
+		checkError(err, "could not create database parent directory 'data'")
 	}
 
 	// Set up database connection.
@@ -74,9 +72,7 @@ func (c *Context) GetTemplate(name string) *template.Template {
 	tpl.Funcs(funcMap)
 
 	_, err := tpl.ParseFiles(paths...)
-	if err != nil {
-		internalError("failed to parse template", err)
-	}
+	checkError(err, "failed to parse template")
 
 	return tpl
 }
@@ -87,9 +83,7 @@ func (c *Context) GetTemplateModified(name string) time.Time {
 	_, paths := c.getTemplatePaths(name)
 	for _, p := range paths {
 		st, err := os.Stat(p)
-		if err != nil {
-			internalError("failed to stat template file", err)
-		}
+		checkError(err, "failed to stat template file")
 
 		t = lastTime(t, st.ModTime())
 	}
@@ -108,20 +102,14 @@ func (c *Context) loadSkin() {
 	for skin != "" {
 		c.skins = append(c.skins, skin)
 		f, err := os.Open(path.Join(c.BlogPath, "skins", skin, "skin.json"))
-		if err != nil {
-			internalError("failed to open skin configuration file:", err)
-		}
+		checkError(err, "failed to open skin configuration file")
 
 		buf, err := ioutil.ReadAll(f)
-		if err != nil {
-			internalError("failed to read skin configuration file", err)
-		}
+		checkError(err, "failed to read skin configuration file")
 
 		skinJson := SkinJson{Pages: make(map[string]SkinPage)}
 		err = json.Unmarshal(buf, &skinJson)
-		if err != nil {
-			internalError("failed to parse skin configuration file", err)
-		}
+		checkError(err, "failed to parse skin configuration file")
 
 		for name, page := range skinJson.Pages {
 			if _, ok := c.skinPages[name]; !ok {
@@ -151,7 +139,5 @@ func (c *Context) getTemplatePaths(name string) (string, []string) {
 
 func (c *Context) Close() {
 	err := c.db.Close()
-	if err != nil {
-		internalError("could not close database", err)
-	}
+	checkError(err, "could not close database")
 }

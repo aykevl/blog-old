@@ -44,9 +44,7 @@ func init() {
 
 func commandFastCGI(ctx *Context, _ []string) {
 	socket, err := net.Listen("unix", ctx.FastCGISocketPath)
-	if err != nil {
-		internalError("could not open fcgi socket file", err)
-	}
+	checkError(err, "could not open fcgi socket file")
 	fcgi.Serve(socket, ctx.router)
 }
 
@@ -100,17 +98,13 @@ func commandInstall(ctx *Context, _ []string) {
 	tablesInDB := make(map[string]bool)
 
 	rows, err := ctx.db.Query("SELECT name FROM sqlite_master WHERE type='table'")
-	if err != nil {
-		internalError("could not query table names", err)
-	}
+	checkError(err, "could not query table names")
 	defer rows.Close()
 
 	for rows.Next() {
 		var name string
 		err := rows.Scan(&name)
-		if err != nil {
-			internalError("could not query table name", err)
-		}
+		checkError(err, "could not query table name")
 		tablesInDB[name] = true
 	}
 
@@ -126,22 +120,16 @@ func commandInstall(ctx *Context, _ []string) {
 			createTableSql := "CREATE TABLE " + name + " (" + strings.Join(columnsSql, ", ") + ")"
 			fmt.Println("Creating table:", name)
 			_, err := ctx.db.Exec(createTableSql)
-			if err != nil {
-				internalError("could not create table '"+name+"'", err)
-			}
+			checkError(err, "could not create table '"+name+"'")
 
 			continue
 		}
 
 		// Query all columns currently in this table.
 		rows, err := ctx.db.Query("SELECT * FROM " + name + " LIMIT 0")
-		if err != nil {
-			internalError("could not query table column names", err)
-		}
+		checkError(err, "could not query table column names")
 		columnsInDB, err := rows.Columns()
-		if err != nil {
-			internalError("could not fetch table column names", err)
-		}
+		checkError(err, "could not fetch table column names")
 		columnsMapInDB := make(map[string]bool)
 		for _, column := range columnsInDB {
 			columnsMapInDB[column] = true
@@ -200,26 +188,18 @@ func commandImportDB(ctx *Context, args []string) {
 
 	checkNameStmt, err := ctx.db.Prepare(
 		"SELECT id FROM pages WHERE name=?")
-	if err != nil {
-		internalError("failed to prepare statement", err)
-	}
+	checkError(err, "failed to prepare statement")
 
 	insertPageStmt, err := ctx.db.Prepare(
 		"INSERT INTO pages (text, name, title, created, published, modified) VALUES (?, ?, ?, ?, ?, ?)")
-	if err != nil {
-		internalError("failed to prepare statement", err)
-	}
+	checkError(err, "failed to prepare statement")
 
 	updatePageStmt, err := ctx.db.Prepare(
 		"UPDATE pages SET text=?, title=?, created=?, published=?, modified=? WHERE id=?")
-	if err != nil {
-		internalError("failed to prepare statement", err)
-	}
+	checkError(err, "failed to prepare statement")
 
 	files, err := ioutil.ReadDir(postsDirectory)
-	if err != nil {
-		internalError("failed to read directory containing posts", err)
-	}
+	checkError(err, "failed to read directory containing posts")
 
 	for _, file := range files {
 		if !strings.HasSuffix(file.Name(), ".markdown") {
@@ -227,20 +207,14 @@ func commandImportDB(ctx *Context, args []string) {
 		}
 
 		fp, err := os.Open(path.Join(postsDirectory, file.Name()))
-		if err != nil {
-			internalError("failed to open page "+file.Name(), err)
-		}
+		checkError(err, "failed to open page "+file.Name())
 		defer fp.Close()
 
 		msg, err := mail.ReadMessage(fp)
-		if err != nil {
-			internalError("failed to read page "+file.Name(), err)
-		}
+		checkError(err, "failed to read page "+file.Name())
 
 		body, err := ioutil.ReadAll(msg.Body)
-		if err != nil {
-			internalError("failed to read page markdown "+file.Name(), err)
-		}
+		checkError(err, "failed to read page markdown "+file.Name())
 
 		var title string
 		var text string
@@ -265,9 +239,7 @@ func commandImportDB(ctx *Context, args []string) {
 			}
 
 			date, err := time.Parse(time.RFC3339, msg.Header.Get(header))
-			if err != nil {
-				internalError("failed to read "+header+" timestamp for page "+file.Name(), err)
-			}
+			checkError(err, "failed to read "+header+" timestamp for page "+file.Name())
 
 			dates[i] = date
 		}
@@ -275,9 +247,7 @@ func commandImportDB(ctx *Context, args []string) {
 		name := msg.Header.Get("Name")
 
 		row := checkNameStmt.QueryRow(name)
-		if err != nil {
-			internalError("failed to execute SQL query", err)
-		}
+		checkError(err, "failed to execute SQL query")
 
 		var pageId int64
 		err = row.Scan(&pageId)
@@ -286,20 +256,15 @@ func commandImportDB(ctx *Context, args []string) {
 			// This page does not yet exist in the database, insert it now.
 			fmt.Println("importing:", name)
 			_, err := insertPageStmt.Exec(text, name, title, exportTime(dates[0]), exportTime(dates[1]), exportTime(dates[2]))
-			if err != nil {
-				internalError("failed to insert page into DB", err)
-			}
-
-		} else if err != nil {
-			internalError("failed to fetch data from DB", err)
+			checkError(err, "failed to insert page into DB")
 
 		} else {
+			checkError(err, "failed to fetch data from DB")
+
 			// row does exist, update the data
 			fmt.Println("updating: ", name)
 			_, err := updatePageStmt.Exec(text, title, exportTime(dates[0]), exportTime(dates[1]), exportTime(dates[2]), pageId)
-			if err != nil {
-				internalError("failed to update page", err)
-			}
+			checkError(err, "failed to update page")
 		}
 	}
 }
@@ -319,9 +284,7 @@ func commandExportDB(ctx *Context, args []string) {
 		filepath := path.Join(postsDirectory, filename)
 
 		fp, err := os.Create(filepath + ".tmp")
-		if err != nil {
-			internalError("failed to create file", err)
-		}
+		checkError(err, "failed to create file")
 
 		output := bufio.NewWriter(fp)
 		fmt.Fprintln(output, "Name:", post.Name)
@@ -343,14 +306,10 @@ func commandExportDB(ctx *Context, args []string) {
 		output.Flush()
 
 		err = fp.Close()
-		if err != nil {
-			internalError("failed to close file: "+filename+".tmp", err)
-		}
+		checkError(err, "failed to close file: "+filename+".tmp")
 
 		err = os.Rename(filepath+".tmp", filepath)
-		if err != nil {
-			internalError("failed to rename file: "+filename+".tmp", err)
-		}
+		checkError(err, "failed to rename file: "+filename+".tmp")
 	}
 }
 
@@ -362,9 +321,7 @@ func commandAddUser(ctx *Context, args []string) {
 	row := ctx.db.QueryRow("SELECT id FROM users WHERE email=?", email)
 	err := row.Scan(&userId)
 	if err != sql.ErrNoRows {
-		if err != nil {
-			internalError("could not check for user email", err)
-		}
+		checkError(err, "could not check for user email")
 		fmt.Println("Email address already exists in database.")
 		return
 	}
@@ -393,9 +350,7 @@ func commandAddUser(ctx *Context, args []string) {
 	hash := storePassword(password)
 
 	_, err = ctx.db.Exec("INSERT INTO users (email, fullname, passwordHash) VALUES (?, ?, ?)", email, name, hash)
-	if err != nil {
-		internalError("failed to add user", err)
-	}
+	checkError(err, "failed to add user")
 }
 
 func commandKeygen(ctx *Context, _ []string) {

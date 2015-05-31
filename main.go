@@ -26,9 +26,7 @@ func requestType() RequestType {
 
 func getRoot() (string, error) {
 	path, err := osext.ExecutableFolder()
-	if err != nil {
-		internalError("could not get executable directory", err)
-	}
+	checkError(err, "could not get executable directory")
 
 	// just to be sure
 	path = filepath.Clean(path)
@@ -44,16 +42,12 @@ func getRoot() (string, error) {
 
 func serveCGI(ctx *Context) {
 	err := cgi.Serve(ctx.router)
-	if err != nil {
-		internalError("failed to serve CGI", err)
-	}
+	checkError(err, "failed to serve CGI")
 }
 
 func main() {
 	root, err := getRoot()
-	if err != nil {
-		internalError("failed to get root directory", err)
-	}
+	checkError(err, "failed to get root directory")
 
 	ctx := NewContext(root)
 	defer ctx.Close()

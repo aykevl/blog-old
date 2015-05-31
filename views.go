@@ -86,9 +86,7 @@ func (v *ViewBase) Output(req *http.Request, w http.ResponseWriter, lastModified
 	gz := gzip.NewWriter(&buf)
 
 	err := tpl.Execute(gz, v.data)
-	if err != nil {
-		internalError("failed to get view output", err)
-	}
+	checkError(err, "failed to get view output")
 
 	gz.Close()
 
@@ -130,9 +128,7 @@ func OutputStatic(req *http.Request, w http.ResponseWriter, contentType string, 
 
 	if req.Method != "HEAD" {
 		n, err := io.Copy(w, f)
-		if err != nil {
-			internalError("could not copy file to output", err)
-		}
+		checkError(err, "could not copy file to output")
 		if n != st.Size() {
 			//raiseError("OutputStatic: size doesn't match with stat output " + strconv.Itoa(int(n)))
 		}
@@ -159,27 +155,22 @@ func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values V
 			f, err := os.Open(p)
 			if os.IsNotExist(err) {
 				continue
-			} else if err != nil {
-				internalError("failed to read JavaScript file", err)
 			}
+			checkError(err, "failed to read JavaScript file")
 			defer f.Close()
 
 			err = os.Remove(outpath + ".tmp")
-			if err != nil && !os.IsNotExist(err) {
-				internalError("could not remove temporary file", err)
+			if !os.IsNotExist(err) {
+				checkError(err, "could not remove temporary file")
 			}
 			// There is a race here: two processes could be creating the file
 			// at the same time.
 			outf, err := os.OpenFile(outpath+".tmp", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
-			if err != nil {
-				internalError("failed to open output JavaScript file", err)
-			}
+			checkError(err, "failed to open output JavaScript file")
 
 			gz := gzip.NewWriter(outf)
 			_, err = io.Copy(gz, f)
-			if err != nil {
-				internalError("could not compress JavaScript file", err)
-			}
+			checkError(err, "could not compress JavaScript file")
 			gz.Close()
 
 			// This can be implemented faster by seeking and outputting the
@@ -196,9 +187,8 @@ func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values V
 			_, err := os.Stat(p)
 			if os.IsNotExist(err) {
 				continue
-			} else if err != nil {
-				internalError("failed to stat SCSS file", err)
 			}
+			checkError(err, "failed to stat SCSS file")
 
 			args := []string{"--default-encoding", "utf-8", "--no-cache"}
 			for _, s := range ctx.skins {
@@ -212,20 +202,18 @@ func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values V
 			checkError(cmd.Start(), "could not run scss")
 
 			err = os.Remove(outpath + ".tmp")
-			if err != nil && !os.IsNotExist(err) {
-				internalError("could not remove temporary file", err)
+			if !os.IsNotExist(err) {
+				checkError(err, "could not remove temporary file")
 			}
 			// There is a race here: two processes could be creating the file
 			// at the same time.
 			outf, err := os.OpenFile(outpath+".tmp", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
-			if err != nil {
-				internalError("failed to open output CSS file", err)
-			}
+			checkError(err, "failed to open output CSS file")
 
 			gz := gzip.NewWriter(outf)
 			_, err = io.Copy(gz, stdout)
 			if err != nil {
-				internalError("could not compress CSS file", err)
+				checkError(err, "could not compress CSS file")
 			}
 			gz.Close()
 
@@ -315,8 +303,8 @@ func AuthenticatedView(ctx *Context, w http.ResponseWriter, r *http.Request) *Vi
 		} else if err == ErrRedirect {
 			// The response has already been sent, exit this HTTP request.
 			return nil
-		} else if err != nil {
-			internalError("unknown user login error", err)
+		} else {
+			checkError(err, "unknown user login error")
 		}
 		view.Output(r, w, time.Time{})
 		return nil
