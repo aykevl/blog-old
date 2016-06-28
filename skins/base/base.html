@@ -6,8 +6,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1"/>
 		<title>{{.siteTitle}}{{if .title}} – {{.title}}{{else}}{{template "title" .}}{{end}}</title>
 		<link rel="stylesheet" href="{{$.assets}}/common.css"/>{{range .extraCSS}}
-		<link rel="stylesheet" href="{{$.assets}}/{{.}}"/>{{end}}
-		<link rel="icon" href="{{$.assets}}/favicon.png"/>
+		<link rel="stylesheet" href="{{$.assets}}/{{.}}"/>{{end}}{{range .icons}}
+		<link rel="icon"{{if .Sizes}} sizes="{{.Sizes}}"{{end}} href="{{$.assets}}/{{.Asset}}"/>{{end}}
 		<script src="{{$.assets}}/common.js" async></script>{{range .extraJS}}
 		<script src="{{$.assets}}/{{.}}" defer></script>{{end}}
 {{template "head" .}}

@@ -35,8 +35,10 @@ func NewView(ctx *Context) *ViewBase {
 	v.data["logo"] = v.ctx.Logo
 	v.data["assets"] = v.ctx.URLPrefix + v.ctx.AssetsPrefix
 	v.data["admin"] = v.ctx.Origin + v.ctx.URLPrefix + "/admin"
+	// these should be moved to template blocks in Go 1.6
 	v.data["extraCSS"] = v.ctx.extraCSS
 	v.data["extraJS"] = v.ctx.extraJS
+	v.data["icons"] = v.ctx.icons
 	return &v
 }
 
