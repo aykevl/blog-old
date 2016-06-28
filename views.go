@@ -32,8 +32,8 @@ func NewView(ctx *Context) *ViewBase {
 	v.data = make(map[string]interface{}, 3)
 	v.data["base"] = v.ctx.URLPrefix
 	v.data["siteTitle"] = v.ctx.SiteTitle
-	v.data["assets"] = v.ctx.URLPrefix + "/assets"
 	v.data["logo"] = v.ctx.Logo
+	v.data["assets"] = v.ctx.URLPrefix + v.ctx.AssetsPrefix
 	v.data["admin"] = v.ctx.Origin + v.ctx.URLPrefix + "/admin"
 	return &v
 }

@@ -37,6 +37,7 @@ type ConfigData struct {
 	WebRoot            string `json:"webroot"`                 // like "/var/www"
 	BlogPath           string `json:"blogpath"`                // full path of source directory
 	URLPrefix          string `json:"urlprefix"`               // for example "/blog", may be empty (default)
+	AssetsPrefix       string `json:"assets"`                  // Assets root, default is "/assets"
 	Origin             string `json:"origin"`                  // start of URL, for example "http://example.com"
 	Secure             bool   `json:"secure"`                  // all requests go over a secure connection
 	HSTSMaxAge         int    `json:"hsts-max-age"`            // HTTP Strict Transport Security max-age (in seconds, 0 to disable)
@@ -55,6 +56,7 @@ func loadConfig(root string) *Config {
 	c.Skin = "base"
 	c.SiteTitle = "Blog"
 	c.Logo = "/assets/logo.png"
+	c.AssetsPrefix = "/assets"
 	c.Secure = true
 	c.HSTSMaxAge = 15552000 // 180 days
 	c.HSTSIncludeSubs = true
