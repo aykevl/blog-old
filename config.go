@@ -33,6 +33,7 @@ type ConfigData struct {
 	// configuration variables
 	Skin               string `json:"skin"`                    // skin, default is "base"
 	SiteTitle          string `json:"title"`                   // blog title, default is "Blog"
+	Logo               string `json:"logo"`                    // Logo in the top-left of the page, default is "/assets/logo.png"
 	WebRoot            string `json:"webroot"`                 // like "/var/www"
 	BlogPath           string `json:"blogpath"`                // full path of source directory
 	URLPrefix          string `json:"urlprefix"`               // for example "/blog", may be empty (default)
@@ -53,6 +54,7 @@ func loadConfig(root string) *Config {
 	// Defaults
 	c.Skin = "base"
 	c.SiteTitle = "Blog"
+	c.Logo = "/assets/logo.png"
 	c.Secure = true
 	c.HSTSMaxAge = 15552000 // 180 days
 	c.HSTSIncludeSubs = true
