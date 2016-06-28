@@ -23,6 +23,14 @@ p {
 	margin: 0.7em 0;
 }
 
+li p:first-child {
+	margin-top: 0;
+}
+
+li p:last-child {
+	margin-bottom: 0;
+}
+
 @media (min-width: 960px) {
 	html {
 		padding-left: calc(100vw - 100%);
@@ -98,6 +106,22 @@ pre {
 	padding-left: 2rem;
 }
 
+blockquote {
+	padding-left: 1.5rem;
+	border-left: 5px solid #ddd;
+	margin-left: 3px;
+	margin-right: 0;
+}
+
+table {
+	border-collapse: collapse;
+}
+table th,
+table td {
+	padding: 4px 8px;
+	border: 1px solid #ddd;
+}
+
 p.error {
 	color: #440000;
 }
@@ -169,6 +193,10 @@ header {
 	}
 }
 @media (max-width: 500px) {
+	body {
+		padding: 1px 13px;
+	}
+
 	#title {
 		font-size: 1.3rem;
 	}
@@ -180,6 +208,12 @@ header {
 
 	pre {
 		padding-left: 1rem;
+	}
+
+	blockquote {
+		padding-left: 1rem;
+		border-left: 3px solid #ddd;
+		margin-left: 1px;
 	}
 }
 @media (max-width: 370px) {
