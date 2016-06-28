@@ -35,6 +35,8 @@ func NewView(ctx *Context) *ViewBase {
 	v.data["logo"] = v.ctx.Logo
 	v.data["assets"] = v.ctx.URLPrefix + v.ctx.AssetsPrefix
 	v.data["admin"] = v.ctx.Origin + v.ctx.URLPrefix + "/admin"
+	v.data["extraCSS"] = v.ctx.extraCSS
+	v.data["extraJS"] = v.ctx.extraJS
 	return &v
 }
 

@@ -17,6 +17,8 @@ import (
 type Context struct {
 	*Config
 	skinPages    map[string]SkinPage
+	extraCSS     []string
+	extraJS      []string
 	skins        []string // list of [skin, parent skins...]
 	db           *sql.DB
 	router       *Router
@@ -29,8 +31,15 @@ type SkinPage struct {
 }
 
 type SkinJson struct {
-	Parent string              `json:"parent"`
-	Pages  map[string]SkinPage `json:"pages"`
+	Parent   string              `json:"parent"`
+	Pages    map[string]SkinPage `json:"pages"`
+	ExtraCSS []string            `json:"extraCSS"`
+	ExtraJS  []string            `json:"extraJS"`
+}
+
+type TemplateData struct {
+	name  string
+	files []string
 }
 
 func NewContext(root string) *Context {
@@ -117,6 +126,14 @@ func (c *Context) loadSkin() {
 				c.skinPages[name] = page
 			}
 		}
+
+		for _, css := range skinJson.ExtraCSS {
+			c.extraCSS = append(c.extraCSS, css)
+		}
+		for _, js := range skinJson.ExtraJS {
+			c.extraJS = append(c.extraJS, js)
+		}
+
 		skin = skinJson.Parent
 	}
 }
