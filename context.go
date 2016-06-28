@@ -75,12 +75,12 @@ func (c *Context) SessionStore() *south.Store {
 }
 
 func (c *Context) GetTemplate(name string) *template.Template {
-	name, paths := c.getTemplatePaths(name)
+	tplData := c.getTemplateData(name)
 
-	tpl := template.New(name)
+	tpl := template.New(tplData.name)
 	tpl.Funcs(funcMap)
 
-	_, err := tpl.ParseFiles(paths...)
+	_, err := tpl.ParseFiles(tplData.files...)
 	checkError(err, "failed to parse template")
 
 	return tpl
@@ -89,8 +89,8 @@ func (c *Context) GetTemplate(name string) *template.Template {
 func (c *Context) GetTemplateModified(name string) time.Time {
 	var t time.Time
 
-	_, paths := c.getTemplatePaths(name)
-	for _, p := range paths {
+	tplData := c.getTemplateData(name)
+	for _, p := range tplData.files {
 		st, err := os.Stat(p)
 		checkError(err, "failed to stat template file")
 
@@ -138,7 +138,7 @@ func (c *Context) loadSkin() {
 	}
 }
 
-func (c *Context) getTemplatePaths(name string) (string, []string) {
+func (c *Context) getTemplateData(name string) TemplateData {
 	c.loadSkin()
 
 	page, ok := c.skinPages[name]
@@ -151,7 +151,10 @@ func (c *Context) getTemplatePaths(name string) (string, []string) {
 		files[i] = path.Join(c.BlogPath, "skins", page.skin, fn)
 	}
 
-	return page.Files[0], files
+	return TemplateData{
+		name:  page.Files[0],
+		files: files,
+	}
 }
 
 func (c *Context) Close() {
