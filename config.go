@@ -56,13 +56,13 @@ func loadConfig(root string) *Config {
 	c.Skin = "base"
 	c.SiteTitle = "Blog"
 	c.Logo = "/assets/logo.png"
+	c.BlogPath = root + "/src/" + IMPORT_PATH
 	c.AssetsPrefix = "/assets"
 	c.Secure = true
 	c.HSTSMaxAge = 15552000 // 180 days
 	c.HSTSIncludeSubs = true
 	c.DatabaseType = "sqlite3"
 	c.DatabaseConnection = root + DB_PATH
-	c.BlogPath = root + "/src/" + IMPORT_PATH
 	c.FastCGISocketPath = root + FCGI_PATH
 
 	c.load(root)

@@ -122,6 +122,21 @@ func OutputStatic(req *http.Request, w http.ResponseWriter, contentType string, 
 		return
 	}
 
+	if len(contentType) < 1 {
+		panic("contentType must have a minimum length of 1")
+	}
+
+	if contentType[0] == '.' {
+		switch contentType {
+		case ".css":
+			contentType = "text/css"
+		case ".js":
+			contentType = "text/javascript"
+		default:
+			checkError(err, "OutputStatic: unknown extension "+contentType)
+		}
+	}
+
 	h.Set("Content-Type", contentType+"; charset=utf-8")
 	h.Set("Content-Encoding", "gzip")
 	h.Set("Content-Length", strconv.FormatInt(st.Size(), 10))
@@ -145,93 +160,106 @@ func AssetHandler(ctx *Context, w http.ResponseWriter, r *http.Request, values V
 
 	ext := path.Ext(name)
 
+	if ext != ".js" && ext != ".css" {
+		NotFound(ctx, w, r)
+		return
+	}
+
+	outpath := path.Join(ctx.WebRoot, ctx.AssetsPrefix, name)
+	if _, err := os.Stat(outpath + ".gz"); err == nil {
+		// The file already exists. That means the server isn't well-configured
+		// or there is a race between creating a file and serving another via
+		// the blog.
+		OutputStatic(r, w, ext, outpath+".gz")
+		return
+	} else if !os.IsNotExist(err) {
+		checkError(err, "could not stat asset file")
+	}
+
 	ctx.loadSkin()
-	for _, skin := range ctx.skins {
-		outpath := path.Join(ctx.WebRoot, "assets", name+".gz")
+	for i, skin := range ctx.skins {
+		var cmd *exec.Cmd // input via command
+		var reader io.Reader
+		var err error
 
 		// TODO clean up duplicate code
 
-		if ext == ".js" {
-			p := path.Join(ctx.BlogPath, "skins", skin, name)
-			f, err := os.Open(p)
+		switch ext {
+		case ".js":
+			// Only open input JavaScript file
+			infile, err := os.Open(path.Join(ctx.BlogPath, "skins", skin, name))
 			if os.IsNotExist(err) {
 				continue
 			}
-			checkError(err, "failed to read JavaScript file")
-			defer f.Close()
+			checkError(err, "failed to open JavaScript file")
+			defer infile.Close()
+			reader = infile
 
-			err = os.Remove(outpath + ".tmp")
-			if !os.IsNotExist(err) {
-				checkError(err, "could not remove temporary file")
-			}
-			// There is a race here: two processes could be creating the file
-			// at the same time.
-			outf, err := os.OpenFile(outpath+".tmp", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
-			checkError(err, "failed to open output JavaScript file")
-
-			gz := gzip.NewWriter(outf)
-			_, err = io.Copy(gz, f)
-			checkError(err, "could not compress JavaScript file")
-			gz.Close()
-
-			// This can be implemented faster by seeking and outputting the
-			// file, and then doing the sync+close+rename. Unfortunately, that
-			// doesn't seem to work so easily...
-			checkError(outf.Sync(), "could not sync data to tmpfile")
-			checkError(outf.Close(), "could not close tmpfile")
-			checkError(os.Rename(outpath+".tmp", outpath), "could not rename tmpfile")
-			OutputStatic(r, w, "text/javascript", outpath)
-			return
-
-		} else if ext == ".css" {
-			p := path.Join(ctx.BlogPath, "skins", skin, name[:len(name)-len(ext)]+".scss")
-			_, err := os.Stat(p)
+		case ".css":
+			// Start converting input SCSS file to CSS
+			scssPath := path.Join(ctx.BlogPath, "skins", skin, name[:len(name)-len(ext)]+".scss")
+			_, err = os.Stat(scssPath)
 			if os.IsNotExist(err) {
 				continue
 			}
 			checkError(err, "failed to stat SCSS file")
 
 			args := []string{"--default-encoding", "utf-8", "--no-cache"}
-			for _, s := range ctx.skins {
-				args = append(args, "-I", path.Join(ctx.BlogPath, "skins", s))
+			for j := i; j < len(ctx.skins); j++ {
+				args = append(args, "-I", path.Join(ctx.BlogPath, "skins", ctx.skins[j]))
 			}
-			args = append(args, p)
+			args = append(args, scssPath)
 
-			cmd := exec.Command("scss", args...)
-			stdout, err := cmd.StdoutPipe()
+			// Debian package for command: ruby-sass
+			cmd = exec.Command("scss", args...)
+			reader, err = cmd.StdoutPipe()
 			checkError(err, "could not get stdout")
 			checkError(cmd.Start(), "could not run scss")
 
-			err = os.Remove(outpath + ".tmp")
-			if !os.IsNotExist(err) {
-				checkError(err, "could not remove temporary file")
-			}
-			// There is a race here: two processes could be creating the file
-			// at the same time.
-			outf, err := os.OpenFile(outpath+".tmp", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
-			checkError(err, "failed to open output CSS file")
-
-			gz := gzip.NewWriter(outf)
-			_, err = io.Copy(gz, stdout)
-			if err != nil {
-				checkError(err, "could not compress CSS file")
-			}
-			gz.Close()
-
-			checkError(cmd.Wait(), "could not finish scss")
-
-			// This can be implemented faster by seeking and outputting the
-			// file, and then doing the sync+close+rename. Unfortunately, that
-			// doesn't seem to work so easily...
-			checkError(outf.Sync(), "could not sync data to tmpfile")
-			checkError(outf.Close(), "could not close tmpfile")
-			checkError(os.Rename(outpath+".tmp", outpath), "could not rename tmpfile")
-			OutputStatic(r, w, "text/css", outpath)
-
-		} else {
-			NotFound(ctx, w, r)
-			return
+		default:
+			panic("unreachable")
 		}
+
+		err = os.Remove(outpath + ".tmp")
+		if !os.IsNotExist(err) {
+			checkError(err, "could not remove temporary file")
+		}
+		err = os.Remove(outpath + ".gz.tmp")
+		if !os.IsNotExist(err) {
+			checkError(err, "could not remove temporary file")
+		}
+		// There is a race here: two processes could be creating these files at
+		// the same time.
+		outfile, err := os.OpenFile(outpath+".tmp", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
+		checkError(err, "failed to open output asset file")
+		outgzfile, err := os.OpenFile(outpath+".gz.tmp", os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
+		checkError(err, "failed to open output gz asset file")
+
+		gzwriter := gzip.NewWriter(outgzfile)
+		// Write the normal and the GZ files at once!
+		tee := io.TeeReader(reader, gzwriter)
+
+		_, err = io.Copy(outfile, tee)
+		checkError(err, "could not compress and write asset file")
+		gzwriter.Close()
+
+		if cmd != nil {
+			// It is important to check whether the command finished
+			// successfully, otherwise we might end up with invalid SCSS files.
+			checkError(cmd.Wait(), "could not finish command")
+		}
+
+		// This can be implemented faster by seeking and outputting the file,
+		// and then doing the sync+close+rename. Unfortunately, that doesn't
+		// seem to work so easily...
+		checkError(outfile.Sync(), "could not sync data to tmpfile")
+		checkError(outgzfile.Sync(), "could not sync data to gzip tmpfile")
+		checkError(outfile.Close(), "could not close tmpfile")
+		checkError(outgzfile.Close(), "could not close gzip tmpfile")
+		checkError(os.Rename(outpath+".tmp", outpath), "could not rename tmpfile")
+		checkError(os.Rename(outpath+".gz.tmp", outpath+".gz"), "could not rename gzip tmpfile")
+
+		OutputStatic(r, w, ext, outpath+".gz")
 	}
 }
 
@@ -403,7 +431,7 @@ func PagePreviewHandler(ctx *Context, w http.ResponseWriter, r *http.Request, va
 		return
 	}
 
-	page := PageFromQuery(ctx, PAGE_TYPE_POST, FETCH_ALL, "id=?", "", values["id"])
+	page := PageFromQuery(ctx, PAGE_TYPE_NONE, FETCH_ALL, "id=?", "", values["id"])
 	if page == nil {
 		NotFound(ctx, w, r)
 		return
