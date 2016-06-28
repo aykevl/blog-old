@@ -43,7 +43,12 @@ func init() {
 }
 
 func commandFastCGI(ctx *Context, _ []string) {
+	err := os.Remove(ctx.FastCGISocketPath)
+	if !os.IsNotExist(err) {
+		checkWarning(err, "could not remove existing socket file")
+	}
 	socket, err := net.Listen("unix", ctx.FastCGISocketPath)
+	checkError(os.Chmod(ctx.FastCGISocketPath, 0660), "could not chmod fcgi socket file")
 	checkError(err, "could not open fcgi socket file")
 	fcgi.Serve(socket, ctx.router)
 }
