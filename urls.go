@@ -83,7 +83,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if r.ctx.Secure && r.ctx.HSTSMaxAge != 0 {
 		maxAge := strconv.Itoa(r.ctx.HSTSMaxAge)
-		w.Header().Set("Strict-Transport-Security", "max-age="+maxAge+"; includeSubDomains")
+		header := "max-age=" + maxAge
+		if r.ctx.HSTSIncludeSubs {
+			header += "; includeSubDomains"
+		}
+		w.Header().Set("Strict-Transport-Security", header)
 	}
 
 	if req.Method != "GET" && req.Method != "HEAD" {

@@ -31,18 +31,19 @@ type Config struct {
 
 type ConfigData struct {
 	// configuration variables
-	Skin               string `json:"skin"`             // skin, default is "base"
-	SiteTitle          string `json:"title"`            // blog title, default is "Blog"
-	WebRoot            string `json:"webroot"`          // like "/var/www"
-	BlogPath           string `json:"blogpath"`         // full path of source directory
-	URLPrefix          string `json:"urlprefix"`        // for example "/blog", may be empty (default)
-	Origin             string `json:"origin"`           // start of URL, for example "http://example.com"
-	Secure             bool   `json:"secure"`           // all requests go over a secure connection
-	HSTSMaxAge         int    `json:"hsts-max-age"`     // HTTP Strict Transport Security max-age (in seconds, 0 to disable)
-	DatabaseType       string `json:"database-type"`    // for example "sqlite3"
-	DatabaseConnection string `json:"database-connect"` // for example path to sqlite3 file
-	SessionKey         string `json:"sessionkey"`       // 32-byte random base64-encoded key used to sign session cookies
-	FastCGISocketPath  string `json:"fcgi-path"`        // FastCGI socket path
+	Skin               string `json:"skin"`                    // skin, default is "base"
+	SiteTitle          string `json:"title"`                   // blog title, default is "Blog"
+	WebRoot            string `json:"webroot"`                 // like "/var/www"
+	BlogPath           string `json:"blogpath"`                // full path of source directory
+	URLPrefix          string `json:"urlprefix"`               // for example "/blog", may be empty (default)
+	Origin             string `json:"origin"`                  // start of URL, for example "http://example.com"
+	Secure             bool   `json:"secure"`                  // all requests go over a secure connection
+	HSTSMaxAge         int    `json:"hsts-max-age"`            // HTTP Strict Transport Security max-age (in seconds, 0 to disable)
+	HSTSIncludeSubs    bool   `json:"hsts-include-subdomains"` // add includeSubDomains
+	DatabaseType       string `json:"database-type"`           // for example "sqlite3"
+	DatabaseConnection string `json:"database-connect"`        // for example path to sqlite3 file
+	SessionKey         string `json:"sessionkey"`              // 32-byte random base64-encoded key used to sign session cookies
+	FastCGISocketPath  string `json:"fcgi-path"`               // FastCGI socket path
 }
 
 func loadConfig(root string) *Config {
@@ -54,6 +55,7 @@ func loadConfig(root string) *Config {
 	c.SiteTitle = "Blog"
 	c.Secure = true
 	c.HSTSMaxAge = 15552000 // 180 days
+	c.HSTSIncludeSubs = true
 	c.DatabaseType = "sqlite3"
 	c.DatabaseConnection = root + DB_PATH
 	c.BlogPath = root + "/src/" + IMPORT_PATH
