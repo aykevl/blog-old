@@ -96,6 +96,22 @@ textarea {
 	width: 100%;
 	resize: vertical;
 }
+
+// https://jsbin.com/qizepev/edit?html,css,js,output
+.autoexpand-hidden {
+	font-size: inherit;
+	font-family: inherit;
+	line-height: inherit;
+	overflow: hidden;
+	position: absolute;
+	left: -9999px;
+	visibility: hidden;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+.autoexpand-enabled {
+	overflow: hidden;
+}
 input.wide {
 	width: 100%;
 }

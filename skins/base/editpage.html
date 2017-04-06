@@ -37,6 +37,6 @@ form > textarea {
 	</div>
 
 	<input type="text" name="summary" placeholder="Summary..." value="{{.page.Summary}}"/>
-	<textarea name="text" placeholder="Go ahead and write what's on your mind!"{{if .page.Title}} autofocus{{end}}>{{.page.Text}}</textarea>
+	<textarea name="text" class="autoexpand" placeholder="Go ahead and write what's on your mind!"{{if .page.Title}} autofocus{{end}}>{{.page.Text}}</textarea>
 </form>
 {{end}}
