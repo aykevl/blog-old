@@ -40,7 +40,11 @@ func formatMarkdown(text string) template.HTML {
 	htmlFlags := blackfriday.HTML_USE_XHTML
 	renderer := blackfriday.HtmlRenderer(htmlFlags, "", "")
 
-	extensions := blackfriday.EXTENSION_FENCED_CODE | blackfriday.EXTENSION_TABLES | blackfriday.EXTENSION_AUTOLINK
+	extensions := 0 | // put all extensions on a separate line
+		blackfriday.EXTENSION_FENCED_CODE |
+		blackfriday.EXTENSION_TABLES |
+		blackfriday.EXTENSION_AUTOLINK |
+		blackfriday.EXTENSION_FOOTNOTES
 	return template.HTML(blackfriday.Markdown([]byte(text), renderer, extensions))
 }
 
