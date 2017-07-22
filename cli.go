@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"net/http/fcgi"
 	"net/mail"
 	"os"
@@ -31,6 +32,7 @@ func init() {
 	// (This works as intended and is not a bug in the compiler.)
 	cmds := map[string]Command{
 		"fcgi":    Command{commandFastCGI, 0, "Run FastCGI server"},
+		"http":    Command{commandHTTP, 1, "Run HTTP server\nUsage: http <host>:<port>"},
 		"help":    Command{commandList, 0, "List all available commands"},
 		"install": Command{commandInstall, 0, "Install blog"},
 		"import":  Command{commandImportDB, 1, "Import stored data from folder - overwrites existing data!"},
@@ -51,6 +53,12 @@ func commandFastCGI(ctx *Context, _ []string) {
 	checkError(os.Chmod(ctx.FastCGISocketPath, 0660), "could not chmod fcgi socket file")
 	checkError(err, "could not open fcgi socket file")
 	fcgi.Serve(socket, ctx.router)
+}
+
+func commandHTTP(ctx *Context, args []string) {
+	socket, err := net.Listen("tcp", args[0])
+	checkError(err, "could not bind to HTTP server address")
+	http.Serve(socket, ctx.router)
 }
 
 func commandList(ctx *Context, _ []string) {
