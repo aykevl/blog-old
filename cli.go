@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -63,7 +64,13 @@ func commandHTTP(ctx *Context, args []string) {
 
 func commandList(ctx *Context, _ []string) {
 	fmt.Println("Available commands:")
-	for name, cmd := range commands {
+	names := make([]string, 0, len(commands))
+	for name, _ := range commands {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		cmd := commands[name]
 		fmt.Printf("   %-10s %s\n", name, strings.Replace(cmd.description, "\n", "\n              ", -1))
 	}
 }
