@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -42,4 +43,11 @@ func equalLastModified(t time.Time, req *http.Request) bool {
 	// full reply is valid anyway, I'll only parse the recommended date
 	// format.
 	// See https://tools.ietf.org/html/rfc7231#section-7.1.1.1
+}
+
+func httpLastModified(t time.Time) string {
+	// We might also use time.RFC1123Z - but the standard appears to require the
+	// string "GMT". Go uses "UTC" so we have to replace it (using UTC isn't
+	// valid - at least not according to wget).
+	return strings.Replace(t.UTC().Format(time.RFC1123), " UTC", " GMT", 1)
 }

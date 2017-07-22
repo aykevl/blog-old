@@ -101,7 +101,7 @@ func (res *Response) Output(w http.ResponseWriter, r *http.Request, lastModified
 	h.Set("Content-Length", strconv.Itoa(buf.Len()))
 
 	if !lastModified.IsZero() {
-		h.Set("Last-Modified", lastModified.UTC().Format(time.RFC1123))
+		h.Set("Last-Modified", httpLastModified(lastModified))
 	}
 
 	if res.errorCode != 0 {
@@ -145,7 +145,7 @@ func OutputStatic(w http.ResponseWriter, r *http.Request, contentType string, p 
 	h.Set("Content-Type", contentType+"; charset=utf-8")
 	h.Set("Content-Encoding", "gzip")
 	h.Set("Content-Length", strconv.FormatInt(st.Size(), 10))
-	h.Set("Last-Modified", st.ModTime().UTC().Format(time.RFC1123))
+	h.Set("Last-Modified", httpLastModified(st.ModTime()))
 
 	if r.Method != "HEAD" {
 		n, err := io.Copy(w, f)
