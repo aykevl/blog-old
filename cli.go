@@ -5,9 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"net/http"
-	"net/http/fcgi"
 	"net/mail"
 	"os"
 	"path"
@@ -16,11 +13,12 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/aykevl/south"
 	"github.com/howeyc/gopass"
 )
 
 type Command struct {
-	call        func(*Context, []string)
+	call        func([]string)
 	parameters  int
 	description string
 }
@@ -45,24 +43,15 @@ func init() {
 	commands = cmds
 }
 
-func commandFastCGI(ctx *Context, _ []string) {
-	err := os.Remove(ctx.FastCGISocketPath)
-	if !os.IsNotExist(err) {
-		checkWarning(err, "could not remove existing socket file")
-	}
-	socket, err := net.Listen("unix", ctx.FastCGISocketPath)
-	checkError(os.Chmod(ctx.FastCGISocketPath, 0660), "could not chmod fcgi socket file")
-	checkError(err, "could not open fcgi socket file")
-	fcgi.Serve(socket, ctx.router)
+func commandFastCGI(_ []string) {
+	blog.serveFastCGI()
 }
 
-func commandHTTP(ctx *Context, args []string) {
-	socket, err := net.Listen("tcp", args[0])
-	checkError(err, "could not bind to HTTP server address")
-	http.Serve(socket, ctx.router)
+func commandHTTP(args []string) {
+	blog.serveHTTP(args[0])
 }
 
-func commandList(ctx *Context, _ []string) {
+func commandList(_ []string) {
 	fmt.Println("Available commands:")
 	names := make([]string, 0, len(commands))
 	for name, _ := range commands {
@@ -75,7 +64,7 @@ func commandList(ctx *Context, _ []string) {
 	}
 }
 
-func commandInstall(ctx *Context, _ []string) {
+func commandInstall(_ []string) {
 	// The structure of the SQL table.
 	tables := map[string][]struct {
 		name     string
@@ -117,7 +106,7 @@ func commandInstall(ctx *Context, _ []string) {
 
 	tablesInDB := make(map[string]bool)
 
-	rows, err := ctx.db.Query("SELECT name FROM sqlite_master WHERE type='table'")
+	rows, err := blog.db.Query("SELECT name FROM sqlite_master WHERE type='table'")
 	checkError(err, "could not query table names")
 	defer rows.Close()
 
@@ -139,14 +128,14 @@ func commandInstall(ctx *Context, _ []string) {
 
 			createTableSql := "CREATE TABLE " + name + " (" + strings.Join(columnsSql, ", ") + ")"
 			fmt.Println("Creating table:", name)
-			_, err := ctx.db.Exec(createTableSql)
+			_, err := blog.db.Exec(createTableSql)
 			checkError(err, "could not create table '"+name+"'")
 
 			continue
 		}
 
 		// Query all columns currently in this table.
-		rows, err := ctx.db.Query("SELECT * FROM " + name + " LIMIT 0")
+		rows, err := blog.db.Query("SELECT * FROM " + name + " LIMIT 0")
 		checkError(err, "could not query table column names")
 		columnsInDB, err := rows.Columns()
 		checkError(err, "could not fetch table column names")
@@ -163,14 +152,14 @@ func commandInstall(ctx *Context, _ []string) {
 
 			fmt.Printf("Adding column to table '%s': %s\n", name, column.name)
 			addColumnSql := "ALTER TABLE " + name + " ADD COLUMN " + column.name + " " + column.datatype
-			_, err := ctx.db.Exec(addColumnSql)
+			_, err := blog.db.Exec(addColumnSql)
 			checkError(err, "could not add column to database")
 		}
 	}
 
 	// Apply all fixups. These may be needed after updates.
 	for _, fixup := range fixups {
-		result, err := ctx.db.Exec(fixup.sql)
+		result, err := blog.db.Exec(fixup.sql)
 		checkError(err, "could not ececute update: "+fixup.action+" (SQL: "+fixup.sql+")")
 
 		rowsAffected, err := result.RowsAffected()
@@ -181,20 +170,25 @@ func commandInstall(ctx *Context, _ []string) {
 	}
 
 	// Generate public/private key pair if it does not yet exist.
-	if ctx.SessionKey == nil {
+	if len(blog.SessionKey) != south.KeySize {
 		fmt.Println("Generating session sign key")
-		generateSessionKey(ctx)
+		blog.generateSessionKey()
+	}
+
+	if len(blog.CSRFKey) < 32 {
+		fmt.Println("Generating CSRF auth key")
+		blog.generateCSRFKey()
 	}
 
 	// Write all config out, even if there didn't seem to be any changes. This
 	// sets defaults so things won't break on upgrades.
-	ctx.Update()
+	blog.Update()
 
 	var undefinedVars []string
-	if ctx.Origin == "" {
+	if blog.Origin == "" {
 		undefinedVars = append(undefinedVars, "origin")
 	}
-	if ctx.WebRoot == "" {
+	if blog.WebRoot == "" {
 		undefinedVars = append(undefinedVars, "webroot")
 	}
 
@@ -203,18 +197,18 @@ func commandInstall(ctx *Context, _ []string) {
 	}
 }
 
-func commandImportDB(ctx *Context, args []string) {
+func commandImportDB(args []string) {
 	postsDirectory := args[0]
 
-	checkNameStmt, err := ctx.db.Prepare(
+	checkNameStmt, err := blog.db.Prepare(
 		"SELECT id FROM pages WHERE name=?")
 	checkError(err, "failed to prepare statement")
 
-	insertPageStmt, err := ctx.db.Prepare(
+	insertPageStmt, err := blog.db.Prepare(
 		"INSERT INTO pages (text, name, title, created, published, modified) VALUES (?, ?, ?, ?, ?, ?)")
 	checkError(err, "failed to prepare statement")
 
-	updatePageStmt, err := ctx.db.Prepare(
+	updatePageStmt, err := blog.db.Prepare(
 		"UPDATE pages SET text=?, title=?, created=?, published=?, modified=? WHERE id=?")
 	checkError(err, "failed to prepare statement")
 
@@ -289,11 +283,11 @@ func commandImportDB(ctx *Context, args []string) {
 	}
 }
 
-func commandExportDB(ctx *Context, args []string) {
+func commandExportDB(args []string) {
 	postsDirectory := args[0]
 
 	// TODO add support for other page types
-	for _, post := range PagesFromQuery(ctx, PAGE_TYPE_POST, FETCH_ALL, "", "") {
+	for _, post := range PagesFromQuery(blog, PAGE_TYPE_POST, FETCH_ALL, "", "") {
 		fmt.Println("exporting:", post.Name)
 
 		filename := post.Name + ".markdown"
@@ -333,12 +327,12 @@ func commandExportDB(ctx *Context, args []string) {
 	}
 }
 
-func commandAddUser(ctx *Context, args []string) {
+func commandAddUser(args []string) {
 	email := args[0]
 	name := args[1]
 
 	var userId int64
-	row := ctx.db.QueryRow("SELECT id FROM users WHERE email=?", email)
+	row := blog.db.QueryRow("SELECT id FROM users WHERE email=?", email)
 	err := row.Scan(&userId)
 	if err != sql.ErrNoRows {
 		checkError(err, "could not check for user email")
@@ -369,45 +363,46 @@ func commandAddUser(ctx *Context, args []string) {
 
 	hash := storePassword(password)
 
-	_, err = ctx.db.Exec("INSERT INTO users (email, fullname, passwordHash) VALUES (?, ?, ?)", email, name, hash)
+	_, err = blog.db.Exec("INSERT INTO users (email, fullname, passwordHash) VALUES (?, ?, ?)", email, name, hash)
 	checkError(err, "failed to add user")
 }
 
-func commandKeygen(ctx *Context, _ []string) {
-	generateSessionKey(ctx)
+func commandKeygen(_ []string) {
+	blog.generateSessionKey()
+	blog.generateCSRFKey()
 }
 
-func commandSecure(ctx *Context, args []string) {
+func commandSecure(args []string) {
 	v := strings.ToLower(args[0])
 	switch v {
 	case "on", "yes", "1":
-		ctx.Secure = true
+		blog.Secure = true
 		fmt.Println("Enabled enforcing security.")
 	case "off", "no", "0":
-		ctx.Secure = false
+		blog.Secure = false
 		fmt.Println("Disabled enforcing security.")
 	default:
 		fmt.Fprintln(os.Stderr, `Invalid boolean. Use "on" or "off".`)
 		os.Exit(1)
 	}
 
-	ctx.Config.Update()
+	blog.Config.Update()
 }
 
-func handleCLI(ctx *Context) {
+func (b *Blog) handleCLI() {
 	if len(os.Args) == 0 {
 		panic("os.Args should have at least one element")
 	}
 	if len(os.Args) == 1 {
 		fmt.Fprintln(os.Stderr, "Provide at least one command.")
-		commandList(ctx, nil)
+		commandList(nil)
 		os.Exit(1)
 	}
 
 	cmd, ok := commands[os.Args[1]]
 	if !ok {
 		fmt.Printf("I don't know command '%s'.\n", os.Args[1])
-		commandList(ctx, nil)
+		commandList(nil)
 		os.Exit(1)
 	}
 
@@ -419,5 +414,5 @@ func handleCLI(ctx *Context) {
 		os.Exit(1)
 	}
 
-	cmd.call(ctx, os.Args[2:])
+	cmd.call(os.Args[2:])
 }

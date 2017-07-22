@@ -2,7 +2,6 @@ package main
 
 import (
 	"code.google.com/p/go.crypto/bcrypt"
-	"github.com/aykevl/south"
 )
 
 func storePassword(password string) string {
@@ -21,11 +20,4 @@ func verifyPassword(password, hash string) bool {
 		internalError("cannot verify password", err, true)
 		panic("unreachable")
 	}
-}
-
-func generateSessionKey(ctx *Context) {
-	sessionKey, err := south.GenerateKey()
-	checkError(err, "could not generate session key")
-	ctx.SessionKey = sessionKey
-	ctx.Config.Update()
 }

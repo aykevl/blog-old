@@ -46,8 +46,8 @@ func NewPage(pageType PageType) *Page {
 	return &Page{Type: pageType, Created: now, Modified: now}
 }
 
-func PageFromQuery(ctx *Context, pageType PageType, hint Hint, whereClause, otherClauses string, args ...interface{}) *Page {
-	pages := PagesFromQuery(ctx, pageType, hint, whereClause, otherClauses, args...)
+func PageFromQuery(blog *Blog, pageType PageType, hint Hint, whereClause, otherClauses string, args ...interface{}) *Page {
+	pages := PagesFromQuery(blog, pageType, hint, whereClause, otherClauses, args...)
 	if len(pages) > 1 {
 		raiseError("tried to fetch one page, but got more than one")
 	}
@@ -61,7 +61,7 @@ func PageFromQuery(ctx *Context, pageType PageType, hint Hint, whereClause, othe
 
 type Pages []*Page
 
-func PagesFromQuery(ctx *Context, pageType PageType, hint Hint, whereClause, otherClauses string, args ...interface{}) Pages {
+func PagesFromQuery(blog *Blog, pageType PageType, hint Hint, whereClause, otherClauses string, args ...interface{}) Pages {
 	var pages []*Page
 
 	query := "SELECT id, name, title, type, summary, published, modified FROM pages "
@@ -86,7 +86,7 @@ func PagesFromQuery(ctx *Context, pageType PageType, hint Hint, whereClause, oth
 
 	query += otherClauses
 
-	rows, err := ctx.db.Query(query, args...)
+	rows, err := blog.db.Query(query, args...)
 	checkError(err, "failed to fetch list of pages")
 	defer rows.Close()
 
@@ -140,7 +140,7 @@ func (p *Page) LastModified() time.Time {
 	return lastTime(p.Published, p.Modified)
 }
 
-func (p *Page) Update(ctx *Context, name, title, summary, text string) {
+func (p *Page) Update(blog *Blog, name, title, summary, text string) {
 	p.Name = name
 	p.Title = title
 	p.Summary = summary
@@ -154,7 +154,7 @@ func (p *Page) Update(ctx *Context, name, title, summary, text string) {
 
 		p.Created = p.Modified
 
-		result, err := ctx.db.Exec("INSERT INTO pages (name, title, type, summary, text, created, modified) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		result, err := blog.db.Exec("INSERT INTO pages (name, title, type, summary, text, created, modified) VALUES (?, ?, ?, ?, ?, ?, ?)",
 			p.Name, p.Title, p.Type, p.Summary, p.Text, exportTime(p.Created), exportTime(p.Modified))
 		checkError(err, "could not insert page")
 
@@ -165,26 +165,26 @@ func (p *Page) Update(ctx *Context, name, title, summary, text string) {
 		}
 
 	} else {
-		_, err := ctx.db.Exec("UPDATE pages SET name=?, title=?, summary=?, text=?, modified=? WHERE id=?",
+		_, err := blog.db.Exec("UPDATE pages SET name=?, title=?, summary=?, text=?, modified=? WHERE id=?",
 			p.Name, p.Title, p.Summary, p.Text, exportTime(p.Modified), p.Id)
 		checkError(err, "could not update page")
 	}
 }
 
 // Publish updates the published time, making this page visible worldwide.
-func (p *Page) Publish(ctx *Context) {
+func (p *Page) Publish(blog *Blog) {
 	p.Published = time.Now()
 
-	_, err := ctx.db.Exec("UPDATE Pages SET published=? WHERE id=?", exportTime(p.Published), p.Id)
+	_, err := blog.db.Exec("UPDATE Pages SET published=? WHERE id=?", exportTime(p.Published), p.Id)
 	checkError(err, "could not publish page")
 }
 
 // Unpublish undoes publishing. It resets the published time to zero.
-func (p *Page) Unpublish(ctx *Context) {
+func (p *Page) Unpublish(blog *Blog) {
 	p.Published = time.Time{} // nil value
 
 	// We could also just simply set to 0
-	_, err := ctx.db.Exec("UPDATE Pages SET published=? WHERE id=?", exportTime(p.Published), p.Id)
+	_, err := blog.db.Exec("UPDATE Pages SET published=? WHERE id=?", exportTime(p.Published), p.Id)
 	checkError(err, "could not unpublish page")
 }
 
@@ -223,9 +223,9 @@ const TokenMaxAge = 60 * 60 * 24 * 7 // one week
 
 // Returns a logged-in user, ErrInvalidUser, ErrInvalidToken, ErrExpiredToken,
 // or ErrRedirect
-func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error) {
+func NewUser(blog *Blog, w http.ResponseWriter, r *http.Request) (*User, error) {
 	if r.Method == "POST" && r.PostFormValue("login") != "" {
-		row := ctx.db.QueryRow("SELECT email,passwordHash FROM users WHERE email=?", r.PostFormValue("email"))
+		row := blog.db.QueryRow("SELECT email,passwordHash FROM users WHERE email=?", r.PostFormValue("email"))
 
 		var email, passwordHash string
 
@@ -241,11 +241,11 @@ func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error
 			return nil, ErrInvalidUser
 		}
 
-		token, err := ctx.SessionStore().NewToken(email)
+		token, err := blog.SessionStore().NewToken(email)
 		checkError(err, "could not create token")
 
 		cookie := token.Cookie()
-		cookie.Secure = ctx.Secure
+		cookie.Secure = blog.Secure
 
 		h := w.Header()
 		h.Set("Set-Cookie", cookie.String())
@@ -260,7 +260,7 @@ func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error
 			return nil, ErrInvalidToken
 		}
 
-		token, err := ctx.SessionStore().Verify(tokenCookie)
+		token, err := blog.SessionStore().Verify(tokenCookie)
 		if err != nil {
 			if err == south.ErrExpiredToken {
 				return nil, ErrExpiredToken
@@ -269,7 +269,7 @@ func NewUser(ctx *Context, w http.ResponseWriter, r *http.Request) (*User, error
 		}
 
 		u := User{}
-		row := ctx.db.QueryRow("SELECT fullname,email FROM users WHERE email=?", token.Id())
+		row := blog.db.QueryRow("SELECT fullname,email FROM users WHERE email=?", token.Id())
 		err = row.Scan(&u.name, &u.email)
 		checkError(err, "cannot fetch user from database")
 

@@ -1,15 +1,12 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
 	"syscall"
-
-	"github.com/aykevl/south"
 )
 
 const CONFIG_PATH = "/etc/blog.json"
@@ -25,8 +22,7 @@ type Config struct {
 	ConfigData
 
 	// Some fields derived from config data
-	OriginURL  *url.URL // Parsed Origin field
-	SessionKey []byte   // Decoded SessionKey
+	OriginURL *url.URL // Parsed Origin field
 }
 
 type ConfigData struct {
@@ -44,7 +40,8 @@ type ConfigData struct {
 	HSTSIncludeSubs    bool   `json:"hsts-include-subdomains"` // add includeSubDomains
 	DatabaseType       string `json:"database-type"`           // for example "sqlite3"
 	DatabaseConnection string `json:"database-connect"`        // for example path to sqlite3 file
-	SessionKey         string `json:"sessionkey"`              // 32-byte random base64-encoded key used to sign session cookies
+	SessionKey         []byte `json:"sessionkey"`              // 32-byte random base64-encoded key used to sign session cookies
+	CSRFKey            []byte `json:"csrfkey"`                 // 32-byte token for Gorilla CSRF
 	FastCGISocketPath  string `json:"fcgi-path"`               // FastCGI socket path
 }
 
@@ -67,7 +64,6 @@ func loadConfig(root string) *Config {
 
 	c.load(root)
 
-	c.SessionKey = decodeKey(c.ConfigData.SessionKey)
 	c.OriginURL, err = url.Parse(c.Origin)
 	checkError(err, "could not parse origin URL in config")
 
@@ -97,7 +93,6 @@ func (c *Config) load(root string) {
 }
 
 func (c *Config) Update() {
-	c.ConfigData.SessionKey = encodeKey(c.SessionKey)
 	c.save()
 }
 
@@ -141,18 +136,4 @@ func (c *Config) save() {
 
 	err = os.Rename(c.path+".tmp", c.path)
 	checkError(err, "error while renaming config file")
-}
-
-func encodeKey(key []byte) string {
-	return base64.StdEncoding.EncodeToString(key[:])
-}
-
-func decodeKey(encodedKey string) []byte {
-	if len(encodedKey) == 0 {
-		return nil
-	}
-	key := make([]byte, base64.StdEncoding.DecodedLen(len(encodedKey)))
-	_, err := base64.StdEncoding.Decode(key, []byte(encodedKey))
-	checkError(err, "could not decode key")
-	return key[:south.KeySize]
 }

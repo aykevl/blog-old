@@ -28,6 +28,7 @@ textarea[name=text] {
 
 {{define "body"}}
 <form method="POST" action="">
+	{{.csrfField}}
 	<h1><input type="text" name="title" class="wide" placeholder="{{capitalize .page.Typename}} title..." required value="{{.page.Title}}"{{if not .page.Title}} autofocus{{end}}/></h1>
 	<div>
 		<input type="text" name="name" class="classic" placeholder="name..." required value="{{.page.Name}}" pattern="[a-z][a-z0-9]*(-[a-z0-9]+)*"/>

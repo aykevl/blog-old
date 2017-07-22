@@ -2,7 +2,6 @@ package main // import "github.com/aykevl/blog"
 
 import (
 	"errors"
-	"net/http/cgi"
 	"os"
 	"path/filepath"
 
@@ -15,6 +14,8 @@ const (
 	REQUEST_TYPE_CGI RequestType = iota + 1
 	REQUEST_TYPE_CLI
 )
+
+var blog *Blog
 
 func requestType() RequestType {
 	if os.Getenv("REQUEST_METHOD") != "" {
@@ -40,22 +41,17 @@ func getRoot() (string, error) {
 	return path, nil
 }
 
-func serveCGI(ctx *Context) {
-	err := cgi.Serve(ctx.router)
-	checkError(err, "failed to serve CGI")
-}
-
 func main() {
 	root, err := getRoot()
 	checkError(err, "failed to get root directory")
 
-	ctx := NewContext(root)
-	defer ctx.Close()
+	blog = NewBlog(root)
+	defer blog.Close()
 
 	if os.Getenv("REQUEST_METHOD") != "" {
-		serveCGI(ctx)
+		blog.serveCGI()
 	} else {
 		// includes FastCGI
-		handleCLI(ctx)
+		blog.handleCLI()
 	}
 }
