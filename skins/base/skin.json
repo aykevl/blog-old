@@ -27,9 +27,6 @@
 		},
 		"404": {
 			"templates": ["base.html", "404.html"]
-		},
-		"csrf-failed": {
-			"templates": ["base.html", "csrf.html"]
 		}
 	}
 }
