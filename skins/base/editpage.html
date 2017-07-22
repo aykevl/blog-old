@@ -16,6 +16,13 @@ form > textarea {
 	min-height: 10em;
 	flex: 1 0 auto;
 }
+/* Yes, I've read http://www.outlinenone.com/
+ * But I think disabling it on the *main* input element just saves distraction
+ * (see e.g. Google Docs).
+ */
+textarea[name=text] {
+	outline: none;
+}
 </style>
 {{end}}
 
