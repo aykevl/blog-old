@@ -319,7 +319,7 @@ func FeedHandler(w http.ResponseWriter, r *http.Request) {
 	h := w.Header()
 	h.Set("Cache-Control", "max-age=60,s-maxage=5")
 
-	posts := PagesFromQuery(blog, PAGE_TYPE_POST, FETCH_TITLE, "published!=0", "ORDER BY published DESC")
+	posts := PagesFromQuery(blog, PAGE_TYPE_POST, FETCH_ALL, "published!=0", "ORDER BY published DESC LIMIT 10")
 	lastModified := posts.LastModified()
 
 	if !lastModified.IsZero() {
@@ -337,7 +337,6 @@ func FeedHandler(w http.ResponseWriter, r *http.Request) {
 	tpl.Funcs(funcMapText)
 	// Spec: https://validator.w3.org/feed/docs/atom.html
 	// TODO: shouldn't this be somewhere in a separate file, e.g. in skins/base?
-	// TODO: <content> element
 	// TODO: store result on disk and send using OutputStatic
 	_, err := tpl.Parse(
 		`<?xml version="1.0" encoding="utf-8"?>
@@ -362,7 +361,9 @@ func FeedHandler(w http.ResponseWriter, r *http.Request) {
    <published>{{.Published|timestamp|xmlescape}}</published>
    <updated>{{.LastModified|timestamp|xmlescape}}</updated>
    <link href="{{$.base|xmlescape}}{{.Url|xmlescape}}"/>
-   <content type="text/html" src="{{$.base|xmlescape}}{{.Url|xmlescape}}"/>
+   <content type="text/html">
+   {{.Text|markdown|xmlescape}}
+   </content>
    <summary>{{.Summary|xmlescape}}</summary>
    <author>
      <name>{{.Author.Name|xmlescape}}</name>

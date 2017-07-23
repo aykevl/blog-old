@@ -39,7 +39,7 @@ func formatTimestamp(date time.Time) string {
 	return date.Format(time.RFC3339)
 }
 
-func formatMarkdown(text string) template.HTML {
+func formatMarkdown(text string) []byte {
 	htmlFlags := blackfriday.HTML_USE_XHTML
 	renderer := blackfriday.HtmlRenderer(htmlFlags, "", "")
 
@@ -48,7 +48,15 @@ func formatMarkdown(text string) template.HTML {
 		blackfriday.EXTENSION_TABLES |
 		blackfriday.EXTENSION_AUTOLINK |
 		blackfriday.EXTENSION_FOOTNOTES
-	return template.HTML(blackfriday.Markdown([]byte(text), renderer, extensions))
+	return blackfriday.Markdown([]byte(text), renderer, extensions)
+}
+
+func formatMarkdownText(text string) string {
+	return string(formatMarkdown(text))
+}
+
+func formatMarkdownHTML(text string) template.HTML {
+	return template.HTML(formatMarkdown(text))
 }
 
 func isTime(t interface{}) bool {
@@ -68,12 +76,13 @@ var funcMap = template.FuncMap{
 	"capitalize": capitalizeFirst,
 	"date":       formatDate,
 	"timestamp":  formatTimestamp,
-	"markdown":   formatMarkdown,
+	"markdown":   formatMarkdownHTML,
 	"istime":     isTime,
 	"xmlescape":  xmlEscape,
 }
 
 var funcMapText = texttemplate.FuncMap{
 	"timestamp": formatTimestamp,
+	"markdown":   formatMarkdownText,
 	"xmlescape": xmlEscape,
 }
