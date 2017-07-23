@@ -358,16 +358,16 @@ func FeedHandler(w http.ResponseWriter, r *http.Request) {
  <entry>
    <id>{{$.base|xmlescape}}{{.Url|xmlescape}}</id>
    <title>{{.Title|xmlescape}}</title>
+   <link href="{{$.base|xmlescape}}{{.Url|xmlescape}}"/>
    <published>{{.Published|timestamp|xmlescape}}</published>
    <updated>{{.LastModified|timestamp|xmlescape}}</updated>
-   <link href="{{$.base|xmlescape}}{{.Url|xmlescape}}"/>
-   <content type="text/html">
-   {{.Text|markdown|xmlescape}}
-   </content>
-   <summary>{{.Summary|xmlescape}}</summary>
    <author>
      <name>{{.Author.Name|xmlescape}}</name>
    </author>
+   <summary>{{.Summary|xmlescape}}</summary>
+   <content type="html">
+   {{.Text|markdown|xmlescape}}
+   </content>
  </entry>
  {{end}}
 
