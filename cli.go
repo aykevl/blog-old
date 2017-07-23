@@ -80,6 +80,7 @@ func commandInstall(_ []string) {
 			{"created", "INTEGER DEFAULT 0"},
 			{"published", "INTEGER DEFAULT 0"},
 			{"modified", "INTEGER DEFAULT 0"},
+			{"author", "INTEGER DEFAULT 0"},
 		},
 		"users": {
 			{"id", "INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL"},
@@ -99,6 +100,10 @@ func commandInstall(_ []string) {
 		{
 			"update page type",
 			"UPDATE pages SET type=1 WHERE type=0",
+		},
+		{
+			"add default user (first user)",
+			"UPDATE pages SET author=(SELECT id FROM users ORDER BY id) WHERE author=0",
 		},
 	}
 

@@ -34,11 +34,13 @@ type Page struct {
 	Name      string
 	Title     string
 	Type      PageType
+	AuthorId  int64
 	Summary   string
 	Created   time.Time
 	Published time.Time
 	Modified  time.Time
 	Text      string
+	author    *User
 }
 
 func NewPage(pageType PageType) *Page {
@@ -64,9 +66,9 @@ type Pages []*Page
 func PagesFromQuery(blog *Blog, pageType PageType, hint Hint, whereClause, otherClauses string, args ...interface{}) Pages {
 	var pages []*Page
 
-	query := "SELECT id, name, title, type, summary, published, modified FROM pages "
+	query := "SELECT id, name, title, type, author, summary, published, modified FROM pages "
 	if hint == FETCH_ALL {
-		query = "SELECT id, name, title, type, summary, created, published, modified, text FROM pages "
+		query = "SELECT id, name, title, type, author, summary, created, published, modified, text FROM pages "
 	}
 
 	if pageType == PAGE_TYPE_NONE {
@@ -95,11 +97,11 @@ func PagesFromQuery(blog *Blog, pageType PageType, hint Hint, whereClause, other
 		var publishedUnix, modifiedUnix int64
 
 		if hint == FETCH_TITLE {
-			err = rows.Scan(&page.Id, &page.Name, &page.Title, &page.Type, &page.Summary, &publishedUnix, &modifiedUnix)
+			err = rows.Scan(&page.Id, &page.Name, &page.Title, &page.Type, &page.AuthorId, &page.Summary, &publishedUnix, &modifiedUnix)
 		} else {
 			var createdUnix int64
 
-			err = rows.Scan(&page.Id, &page.Name, &page.Title, &page.Type, &page.Summary, &createdUnix, &publishedUnix, &modifiedUnix, &page.Text)
+			err = rows.Scan(&page.Id, &page.Name, &page.Title, &page.Type, &page.AuthorId, &page.Summary, &createdUnix, &publishedUnix, &modifiedUnix, &page.Text)
 
 			page.Created = importTime(createdUnix)
 		}
@@ -116,6 +118,13 @@ func PagesFromQuery(blog *Blog, pageType PageType, hint Hint, whereClause, other
 
 func (p *Page) Typename() string {
 	return PageTypeNames[p.Type]
+}
+
+func (p *Page) Author() *User {
+	if p.author == nil {
+		p.author = UserFromId(p.AuthorId)
+	}
+	return p.author
 }
 
 func (p *Page) Url() string {
@@ -140,10 +149,11 @@ func (p *Page) LastModified() time.Time {
 	return lastTime(p.Published, p.Modified)
 }
 
-func (p *Page) Update(blog *Blog, name, title, summary, text string) {
+func (p *Page) Update(blog *Blog, author *User, name, title, summary, text string) {
 	p.Name = name
 	p.Title = title
 	p.Summary = summary
+	p.AuthorId = author.id
 	p.Text = text
 	p.Modified = time.Now()
 
@@ -154,8 +164,8 @@ func (p *Page) Update(blog *Blog, name, title, summary, text string) {
 
 		p.Created = p.Modified
 
-		result, err := blog.db.Exec("INSERT INTO pages (name, title, type, summary, text, created, modified) VALUES (?, ?, ?, ?, ?, ?, ?)",
-			p.Name, p.Title, p.Type, p.Summary, p.Text, exportTime(p.Created), exportTime(p.Modified))
+		result, err := blog.db.Exec("INSERT INTO pages (name, title, type, author, summary, text, created, modified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+			p.Name, p.Title, p.Type, p.AuthorId, p.Summary, p.Text, exportTime(p.Created), exportTime(p.Modified))
 		checkError(err, "could not insert page")
 
 		p.Id, err = result.LastInsertId()
@@ -204,6 +214,7 @@ func (ps Pages) LastModified() time.Time {
 
 // authenticated user
 type User struct {
+	id    int64
 	name  string
 	email string
 }
@@ -269,14 +280,22 @@ func NewUser(blog *Blog, w http.ResponseWriter, r *http.Request) (*User, error) 
 		}
 
 		u := User{}
-		row := blog.db.QueryRow("SELECT fullname,email FROM users WHERE email=?", token.Id())
-		err = row.Scan(&u.name, &u.email)
+		row := blog.db.QueryRow("SELECT id, fullname, email FROM users WHERE email=?", token.Id())
+		err = row.Scan(&u.id, &u.name, &u.email)
 		checkError(err, "cannot fetch user from database")
 
 		return &u, nil
 	}
 
 	return nil, nil
+}
+
+func UserFromId(id int64) *User {
+	u := User{}
+	row := blog.db.QueryRow("SELECT id, fullname, email FROM users WHERE id=?", id)
+	err := row.Scan(&u.id, &u.name, &u.email)
+	checkError(err, "cannot fetch user from database")
+	return &u
 }
 
 func (u *User) Name() string {

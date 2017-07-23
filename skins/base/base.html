@@ -8,6 +8,7 @@
 		<link rel="stylesheet" href="{{$.assets}}/common.css"/>{{range .extraCSS}}
 		<link rel="stylesheet" href="{{$.assets}}/{{.}}"/>{{end}}{{range .icons}}
 		<link rel="icon"{{if .Sizes}} sizes="{{.Sizes}}"{{end}} href="{{$.assets}}/{{.Asset}}"/>{{end}}
+		<link rel="alternate" type="application/atom+xml" title="Blog" href="/feed.xml" />
 		<script src="{{$.assets}}/common.js" async></script>{{range .extraJS}}
 		<script src="{{$.assets}}/{{.}}" defer></script>{{end}}
 {{template "head" .}}

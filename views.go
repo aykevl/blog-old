@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	texttemplate "text/template"
 	"time"
 
 	"github.com/gorilla/csrf"
@@ -314,6 +315,83 @@ func ArchiveHandler(w http.ResponseWriter, r *http.Request) {
 	res.Output(w, r, posts.LastModified())
 }
 
+func FeedHandler(w http.ResponseWriter, r *http.Request) {
+	h := w.Header()
+	h.Set("Cache-Control", "max-age=60,s-maxage=5")
+
+	posts := PagesFromQuery(blog, PAGE_TYPE_POST, FETCH_TITLE, "published!=0", "ORDER BY published DESC")
+	lastModified := posts.LastModified()
+
+	if !lastModified.IsZero() {
+		if equalLastModified(lastModified, r) {
+			w.WriteHeader(304) // Not Modified
+			return
+		}
+	}
+
+	h.Set("Content-Type", "application/atom+xml; charset=utf-8")
+	h.Set("Content-Encoding", "gzip")
+	h.Set("Last-Modified", httpLastModified(lastModified))
+
+	tpl := texttemplate.New("feed")
+	tpl.Funcs(funcMapText)
+	// Spec: https://validator.w3.org/feed/docs/atom.html
+	// TODO: shouldn't this be somewhere in a separate file, e.g. in skins/base?
+	// TODO: <content> element
+	// TODO: store result on disk and send using OutputStatic
+	_, err := tpl.Parse(
+		`<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+ <id>{{.feedURL|xmlescape}}</id>
+ <title>{{.title|xmlescape}}</title>
+ <updated>{{.posts.LastModified|timestamp|xmlescape}}</updated>
+ <icon>{{$.base|xmlescape}}{{.icon|xmlescape}}</icon>
+
+ <link rel="self" type="application/atom+xml" href="{{.feedURL|xmlescape}}"/>
+ <link rel="alternate" type="text/html" href="{{.indexURL|xmlescape}}"/>
+
+ <generator uri="https://github.com/aykevl/blog">
+   Simple blogging system by Ayke van Laethem
+ </generator>
+
+ {{range .posts}}
+ <entry>
+   <id>{{$.base|xmlescape}}{{.Url|xmlescape}}</id>
+   <title>{{.Title|xmlescape}}</title>
+   <published>{{.Published|timestamp|xmlescape}}</published>
+   <updated>{{.LastModified|timestamp|xmlescape}}</updated>
+   <link href="{{$.base|xmlescape}}{{.Url|xmlescape}}"/>
+   <content type="text/html" src="{{$.base|xmlescape}}{{.Url|xmlescape}}"/>
+   <summary>{{.Summary|xmlescape}}</summary>
+   <author>
+     <name>{{.Author.Name|xmlescape}}</name>
+   </author>
+ </entry>
+ {{end}}
+
+</feed>
+`)
+	checkError(err, "failed to parse feed template")
+
+	indexURL, _ := blog.mux.Get("index").URL()
+	feedURL, _ := blog.mux.Get("feed").URL()
+
+	data := map[string]interface{}{
+		"base":     blog.Origin + blog.URLPrefix,
+		"indexURL": blog.Origin + indexURL.Path,
+		"feedURL":  blog.Origin + feedURL.Path,
+		"posts":    posts,
+		"title":    blog.SiteTitle,
+		"icon":     blog.Logo,
+	}
+
+	gz := gzip.NewWriter(w)
+	err = tpl.Execute(gz, data)
+	checkError(err, "failed to generate feed XML")
+	gz.Close()
+}
+
 func NewAuthenticatedResponse(w http.ResponseWriter, r *http.Request) *Response {
 	// Require authenticated views to be of the canonical origin.
 	if blog.OriginURL.Host != r.Host || // host can also mean host:port
@@ -400,7 +478,8 @@ func PageEditHandler(w http.ResponseWriter, r *http.Request) {
 		// Page.Id will get set during the update.
 		newPage := page.Id == 0
 
-		page.Update(blog, r.PostFormValue("name"), r.PostFormValue("title"), r.PostFormValue("summary"), r.PostFormValue("text"))
+		user := res.data["user"].(*User)
+		page.Update(blog, user, r.PostFormValue("name"), r.PostFormValue("title"), r.PostFormValue("summary"), r.PostFormValue("text"))
 
 		if r.PostFormValue("publish") != "" {
 			page.Publish(blog)

@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/xml"
 	"fmt"
 	"html/template"
 	"strings"
+	texttemplate "text/template"
 	"time"
 
 	"github.com/russross/blackfriday"
@@ -55,10 +58,22 @@ func isTime(t interface{}) bool {
 	return false
 }
 
+func xmlEscape(s string) string {
+	buf := &bytes.Buffer{}
+	checkError(xml.EscapeText(buf, []byte(s)), "could not escape XML")
+	return string(buf.Bytes())
+}
+
 var funcMap = template.FuncMap{
 	"capitalize": capitalizeFirst,
 	"date":       formatDate,
 	"timestamp":  formatTimestamp,
 	"markdown":   formatMarkdown,
 	"istime":     isTime,
+	"xmlescape":  xmlEscape,
+}
+
+var funcMapText = texttemplate.FuncMap{
+	"timestamp": formatTimestamp,
+	"xmlescape": xmlEscape,
 }

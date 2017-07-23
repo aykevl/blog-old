@@ -88,6 +88,7 @@ func NewBlog(root string) *Blog {
 	sub.HandleFunc("/admin/edit/{id:[1-9][0-9]*}", PageEditHandler)
 	sub.HandleFunc("/admin/edit/{id:[1-9][0-9]*}/preview", PagePreviewHandler)
 	sub.HandleFunc("/archive/", ArchiveHandler).Name("archive")
+	sub.HandleFunc("/feed.xml", FeedHandler).Name("feed")
 	archive, _ := sub.Get("archive").URLPath()
 	sub.Handle("/archive", http.RedirectHandler(archive.Path, http.StatusMovedPermanently))
 	sub.HandleFunc("/assets/{name}", AssetHandler)
