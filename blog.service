@@ -1,0 +1,13 @@
+# Example blog.service for systemd
+
+[Unit]
+Description=Blog
+After=network.target
+
+[Service]
+ExecStart=/home/blog/bin/blog-fcgi
+User=blog
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
