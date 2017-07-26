@@ -339,12 +339,12 @@ article > a:hover > h1 {
 	text-decoration: underline;
 }
 
-article .published,
+article .authored ,
 article .modified {
 	font-size: 0.85rem;
 	font-family: Verdana;
 }
-article .published {
+article .authored {
 	display: block;
 	margin-top: 4px;
 }
@@ -352,13 +352,13 @@ article .modified {
 	text-align: right;
 }
 @media screen {
-	article .published,
+	article .authored,
 	article .modified {
 		color: #999;
 	}
 }
 @media print {
-	article .published,
+	article .authored,
 	article .modified {
 		font-size: 0.70rem;
 	}
@@ -368,7 +368,7 @@ article .modified {
 	main h1 {
 		margin-top: 10px;
 	}
-	article .published {
+	article .authored {
 		font-size: 0.75rem;
 	}
 }

@@ -10,7 +10,10 @@
 {{with .page}}
 <article class="post" property="mainEntity" typeof="BlogPosting">
 	<h1 property="headline name"><a href="{{$.base}}{{.Url}}" property="url">{{.Title}}</a></h1>
-	<time datetime="{{timestamp .Published}}" class="published" property="datePublished">{{date .Published}}</time>
+	<div class="authored">
+		<time datetime="{{timestamp .Published}}" class="published" property="datePublished">{{date .Published}}</time>,
+		by <span property="author">{{.Author.Name}}</span>
+	</div>
 	<div property="articleBody">
 {{markdown .Text}}
 	</div>

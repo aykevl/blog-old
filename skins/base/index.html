@@ -4,7 +4,7 @@
 {{range .posts}}
 <article class="post" property="blogPost" typeof="BlogPosting">
 	<h1 property="headline name"><a href="{{$.base}}{{.Url}}" property="url">{{.Title}}</a></h1>
-	<time datetime="{{timestamp .Published}}" class="published">{{date .Published}}</time>
+	<time datetime="{{timestamp .Published}}" class="authored" property="datePublished">{{date .Published}}</time>
 	<p property="description">{{markdown .Summary}}</p>
 </article>
 {{end}}
