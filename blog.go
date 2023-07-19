@@ -80,7 +80,7 @@ func NewBlog(root string) *Blog {
 	}
 
 	sub.HandleFunc("/", BlogIndexHandler).Name("index")
-	sub.HandleFunc("/{year:[0-9]{4}}/{month:0[0-9]|1[0-2]}/{name:[a-z0-9]+(-[a-z0-9]+)*}", PageViewHandler)
+	sub.HandleFunc("/{year:[0-9]{4}}/{month:0[0-9]|1[0-2]}/{name:[a-z0-9]+(?:-[a-z0-9]+)*}", PageViewHandler)
 	sub.HandleFunc("/admin/", AdminHandler).Name("admin")
 	admin, _ := sub.Get("admin").URLPath()
 	sub.Handle("/admin", http.RedirectHandler(admin.Path, http.StatusMovedPermanently))
@@ -92,7 +92,7 @@ func NewBlog(root string) *Blog {
 	archive, _ := sub.Get("archive").URLPath()
 	sub.Handle("/archive", http.RedirectHandler(archive.Path, http.StatusMovedPermanently))
 	sub.HandleFunc("/assets/{name}", AssetHandler)
-	sub.HandleFunc("/{name:[a-z0-9]+(-[a-z0-9]+)*}", PageViewHandler)
+	sub.HandleFunc("/{name:[a-z0-9]+(?:-[a-z0-9]+)*}", PageViewHandler)
 	sub.HandleFunc("/{page:.*}", NotFound) // when no route matches: 404 error
 
 	b.router = csrf.Protect(b.CSRFKey, csrf.Secure(b.Secure))(b.mux)

@@ -14,7 +14,7 @@ import (
 	"unicode"
 
 	"github.com/aykevl/south"
-	"github.com/howeyc/gopass"
+	//"github.com/howeyc/gopass"
 )
 
 type Command struct {
@@ -334,7 +334,7 @@ func commandExportDB(args []string) {
 
 func commandAddUser(args []string) {
 	email := args[0]
-	name := args[1]
+	//name := args[1]
 
 	var userId int64
 	row := blog.db.QueryRow("SELECT id FROM users WHERE email=?", email)
@@ -345,31 +345,33 @@ func commandAddUser(args []string) {
 		return
 	}
 
-	var password string
-	for i := 0; ; i++ {
-		if i >= 3 {
-			return
-		}
+	fmt.Println("not implemented.")
 
-		fmt.Printf("Password for new user:")
-		password = string(gopass.GetPasswd())
-		fmt.Printf("Repeat password:")
-		password2 := string(gopass.GetPasswd())
+	//var password string
+	//for i := 0; ; i++ {
+	//	if i >= 3 {
+	//		return
+	//	}
 
-		if len(password) < 8 {
-			// TODO password strength checking using zxcvbn or similar
-			fmt.Println("Use a password of at least 8 characters.")
-		} else if password != password2 {
-			fmt.Println("Passwords don't match.")
-		} else {
-			break
-		}
-	}
+	//	fmt.Printf("Password for new user:")
+	//	password = string(gopass.GetPasswd())
+	//	fmt.Printf("Repeat password:")
+	//	password2 := string(gopass.GetPasswd())
 
-	hash := storePassword(password)
+	//	if len(password) < 8 {
+	//		// TODO password strength checking using zxcvbn or similar
+	//		fmt.Println("Use a password of at least 8 characters.")
+	//	} else if password != password2 {
+	//		fmt.Println("Passwords don't match.")
+	//	} else {
+	//		break
+	//	}
+	//}
 
-	_, err = blog.db.Exec("INSERT INTO users (email, fullname, passwordHash) VALUES (?, ?, ?)", email, name, hash)
-	checkError(err, "failed to add user")
+	//hash := storePassword(password)
+
+	//_, err = blog.db.Exec("INSERT INTO users (email, fullname, passwordHash) VALUES (?, ?, ?)", email, name, hash)
+	//checkError(err, "failed to add user")
 }
 
 func commandKeygen(_ []string) {
